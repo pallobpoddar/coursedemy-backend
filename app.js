@@ -7,10 +7,10 @@ const dotenv = require("dotenv");
 const cors = require("cors");
 const multer = require("multer");
 const HTTP_STATUS = require("./constants/statusCodes");
-const sendResponse = require("./util/commonResponse");
+const sendResponse = require("./utils/commonResponse");
 const authRouter = require("./routes/authRoutes");
 const userRouter = require("./routes/userRoutes");
-const databaseConnection = require("./config/database");
+const databaseConnection = require("./configs/database");
 
 const accessLogStream = fs.createWriteStream(
 	path.join(__dirname, "logFile.log"),

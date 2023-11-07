@@ -1,12 +1,12 @@
 const express = require("express");
 const authRoutes = express();
 const authValidator = require("../middleware/authValidation.js");
-const authController = require("../controller/authController");
+const authController = require("../controllers/authController.js");
 
 authRoutes.post("/signup", authValidator.signup, authController.signup);
 authRoutes.post("/signin", authValidator.signin, authController.signin);
 authRoutes.post(
-	"/forgot-password",
+	"/forgot-password-email",
 	authValidator.forgotPassword,
 	authController.sendForgotPasswordEmail
 );

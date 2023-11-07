@@ -1,6 +1,6 @@
-const sendResponse = require("../util/commonResponse");
-const HTTP_STATUS = require("../constants/statusCodes");
 const jsonwebtoken = require("jsonwebtoken");
+const sendResponse = require("../utils/commonResponse");
+const HTTP_STATUS = require("../constants/statusCodes");
 
 const isAuthenticated = (req, res, next) => {
 	try {

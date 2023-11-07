@@ -1,8 +1,8 @@
-const userModel = require("../model/user");
-const authModel = require("../model/auth");
-const sendResponse = require("../util/commonResponse");
-const HTTP_STATUS = require("../constants/statusCodes");
 const { validationResult } = require("express-validator");
+const userModel = require("../models/user");
+const authModel = require("../models/auth");
+const sendResponse = require("../utils/commonResponse");
+const HTTP_STATUS = require("../constants/statusCodes");
 
 class UserController {
 	async getAll(req, res) {

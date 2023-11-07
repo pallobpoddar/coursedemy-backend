@@ -1,6 +1,6 @@
 const express = require("express");
 const userRoutes = express();
-const userController = require("../controller/userController");
+const userController = require("../controllers/userController");
 const userValidator = require("../middleware/userValidation");
 const {
 	isAuthenticated,

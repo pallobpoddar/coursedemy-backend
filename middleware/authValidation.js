@@ -5,9 +5,6 @@ const validateEmail = (message) => {
 		.exists()
 		.withMessage("Email is required")
 		.bail()
-		.isLength({ max: 64 })
-		.withMessage(message)
-		.bail()
 		.isEmail()
 		.withMessage(message);
 };

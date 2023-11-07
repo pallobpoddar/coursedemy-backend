@@ -20,24 +20,29 @@ const authSchema = new mongoose.Schema(
 			type: String,
 			required: true,
 		},
-		failedAttempts: {
+		signInFailed: {
 			type: Number,
 			required: false,
 			default: 0,
 		},
-		blockedUntil: {
+		signInBlockedUntil: {
 			type: Date,
 			required: false,
 		},
-		resetPassword: {
-			type: Boolean || null,
+		forgotEmailSent: {
+			type: Number,
+			required: false,
+			default: 0,
+		},
+		forgotEmailBlockedUntil: {
+			type: Date,
 			required: false,
 		},
 		resetPasswordToken: {
 			type: String || null,
 			required: false,
 		},
-		resetPasswordExpire: {
+		resetPasswordValidUntil: {
 			type: Date || null,
 			required: false,
 		},
