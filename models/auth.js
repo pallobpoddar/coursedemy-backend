@@ -2,49 +2,60 @@ const mongoose = require("mongoose");
 
 const authSchema = new mongoose.Schema(
 	{
+		learnerReference: {
+			type: mongoose.Types.ObjectId,
+			ref: "Learner",
+			unique: [true, "Learner reference already exists"],
+		},
+		instructorReference: {
+			type: mongoose.Types.ObjectId,
+			ref: "Instructor",
+			unique: [true, "Instructor reference already exists"],
+		},
+		adminReference: {
+			type: mongoose.Types.ObjectId,
+			ref: "Admin",
+			unique: [true, "Admin reference already exists"],
+		},
 		email: {
 			type: String,
-			required: true,
-			unique: true,
+			required: [true, "Email is required"],
+			unique: [true, "Email already exists"],
+			maxLength: [64, "Invalid email"],
 		},
 		password: {
 			type: String,
-			required: true,
-		},
-		user: {
-			type: mongoose.Types.ObjectId,
-			ref: "User",
-			required: true,
+			required: [true, "Password is required"],
+			maxLength: [20, "Invalid password"],
 		},
 		role: {
 			type: String,
-			required: true,
+			required: [true, "Role is required"],
+		},
+		isVerified: {
+			type: Boolean,
+			required: [true, "IsVerified is required"],
+			default: false,
 		},
 		signInFailed: {
 			type: Number,
-			required: false,
 			default: 0,
 		},
 		signInBlockedUntil: {
 			type: Date,
-			required: false,
 		},
 		forgotEmailSent: {
 			type: Number,
-			required: false,
 			default: 0,
 		},
 		forgotEmailBlockedUntil: {
 			type: Date,
-			required: false,
 		},
 		resetPasswordToken: {
 			type: String || null,
-			required: false,
 		},
 		resetPasswordValidUntil: {
 			type: Date || null,
-			required: false,
 		},
 	},
 	{ timestamps: true }

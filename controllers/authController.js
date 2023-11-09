@@ -6,7 +6,9 @@ const { promisify } = require("util");
 const jsonwebtoken = require("jsonwebtoken");
 const { validationResult } = require("express-validator");
 const ejsRenderFile = promisify(ejs.renderFile);
-const userModel = require("../models/user");
+const learnerModel = require("../models/learner");
+const instructorModel = require("../models/instructor");
+const adminModel = require("../models/admin");
 const authModel = require("../models/auth");
 const transporter = require("../configs/mail");
 const sendResponse = require("../utils/commonResponse");
@@ -46,7 +48,7 @@ class AuthController {
 
 			const { email, password, name, role } = req.body;
 
-			const isEmailRegistered = await userModel.findOne({ email: email });
+			const isEmailRegistered = await authModel.findOne({ email: email });
 			if (isEmailRegistered) {
 				return sendResponse(
 					res,
@@ -56,6 +58,13 @@ class AuthController {
 				);
 			}
 
+			const rolesToModel = {
+				learner: learnerModel,
+				instructor: instructorModel,
+				admin: adminModel,
+			};
+
+			const userModel = rolesToModel[role];
 			const user = await userModel.create({
 				name: name,
 				email: email,
@@ -72,11 +81,18 @@ class AuthController {
 					return hash;
 				});
 
+			const rolesToReference = {
+				learner: learnerReference,
+				instructor: instructorReference,
+				amdin: adminReference,
+			};
+			const userReference = rolesToReference[role];
+
 			await authModel
 				.create({
 					email: email,
 					password: hashedPassword,
-					user: user._id,
+					userReference: user._id,
 					role: role,
 				})
 				.then(() => {
