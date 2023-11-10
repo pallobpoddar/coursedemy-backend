@@ -42,7 +42,7 @@ const isAuthenticated = (req, res, next) => {
 	}
 };
 
-const isAuthorized = (req, res, next) => {
+const isAdmin = (req, res, next) => {
 	try {
 		const jwt = req.headers.authorization.split(" ")[1];
 
@@ -67,4 +67,59 @@ const isAuthorized = (req, res, next) => {
 	}
 };
 
-module.exports = { isAuthenticated, isAuthorized };
+const isLearnerOrAdmin = (req, res, next) => {
+	try {
+		const jwt = req.headers.authorization.split(" ")[1];
+
+		const user = jsonwebtoken.decode(jwt);
+
+		if (user.role !== "learner" && user.role !== "admin") {
+			return sendResponse(
+				res,
+				HTTP_STATUS.UNAUTHORIZED,
+				"Access denied",
+				"Unauthorized"
+			);
+		}
+		next();
+	} catch (error) {
+		return sendResponse(
+			res,
+			HTTP_STATUS.INTERNAL_SERVER_ERROR,
+			"Internal server error",
+			"Server error"
+		);
+	}
+};
+
+const isInstructorOrAdmin = (req, res, next) => {
+	try {
+		const jwt = req.headers.authorization.split(" ")[1];
+
+		const user = jsonwebtoken.decode(jwt);
+
+		if (user.role !== "instructor" && user.role !== "admin") {
+			return sendResponse(
+				res,
+				HTTP_STATUS.UNAUTHORIZED,
+				"Access denied",
+				"Unauthorized"
+			);
+		}
+		next();
+	} catch (error) {
+		return sendResponse(
+			res,
+			HTTP_STATUS.INTERNAL_SERVER_ERROR,
+			"Internal server error",
+			"Server error"
+		);
+	}
+};
+
+module.exports = {
+	isAuthenticated,
+	isAdmin,
+	isLearnerOrAdmin,
+	isInstructorOrAdmin,
+};

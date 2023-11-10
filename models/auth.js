@@ -3,19 +3,16 @@ const mongoose = require("mongoose");
 const authSchema = new mongoose.Schema(
 	{
 		learnerReference: {
-			type: mongoose.Types.ObjectId,
+			type: mongoose.Types.ObjectId || null,
 			ref: "Learner",
-			unique: [true, "Learner reference already exists"],
 		},
 		instructorReference: {
-			type: mongoose.Types.ObjectId,
+			type: mongoose.Types.ObjectId || null,
 			ref: "Instructor",
-			unique: [true, "Instructor reference already exists"],
 		},
 		adminReference: {
-			type: mongoose.Types.ObjectId,
+			type: mongoose.Types.ObjectId || null,
 			ref: "Admin",
-			unique: [true, "Admin reference already exists"],
 		},
 		email: {
 			type: String,
@@ -26,7 +23,6 @@ const authSchema = new mongoose.Schema(
 		password: {
 			type: String,
 			required: [true, "Password is required"],
-			maxLength: [20, "Invalid password"],
 		},
 		role: {
 			type: String,

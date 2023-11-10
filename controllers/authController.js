@@ -75,34 +75,30 @@ class AuthController {
 			delete filteredInfo.updatedAt;
 			delete filteredInfo.__v;
 
-			const hashedPassword = await bcrypt
-				.hash(password, 10)
-				.then((hash) => {
-					return hash;
-				});
+			const hashedPassword = await bcrypt.hash(password, 10).then((hash) => {
+				return hash;
+			});
 
-			const rolesToReference = {
-				learner: learnerReference,
-				instructor: instructorReference,
-				amdin: adminReference,
+			const referenceProperty = `${role}Reference`;
+
+			const authData = {
+				learnerReference: null,
+				instructorReference: null,
+				adminReference: null,
+				email: email,
+				password: hashedPassword,
+				role: role,
 			};
-			const userReference = rolesToReference[role];
+			authData[referenceProperty] = user._id;
 
-			await authModel
-				.create({
-					email: email,
-					password: hashedPassword,
-					userReference: user._id,
-					role: role,
-				})
-				.then(() => {
-					return sendResponse(
-						res,
-						HTTP_STATUS.OK,
-						"Successfully signed up",
-						filteredInfo
-					);
-				});
+			await authModel.create(authData).then(() => {
+				return sendResponse(
+					res,
+					HTTP_STATUS.OK,
+					"Successfully signed up",
+					filteredInfo
+				);
+			});
 		} catch (error) {
 			return sendResponse(
 				res,
@@ -142,8 +138,10 @@ class AuthController {
 
 			const auth = await authModel
 				.findOne({ email: email })
-				.populate("user", "-createdAt -updatedAt -__v")
-				.select("-email -forgotEmailSent -createdAt -updatedAt -__v");
+				.populate("learnerReference", "-createdAt -updatedAt -__v ")
+				.populate("instructorReference", "-createdAt -updatedAt -__v ")
+				.populate("adminReference", "-createdAt -updatedAt -__v ")
+				.select("-_id -email -forgotEmailSent -createdAt -updatedAt -__v");
 
 			if (!auth) {
 				return sendResponse(
@@ -170,9 +168,7 @@ class AuthController {
 				}
 
 				const blockedDuration = 60 * 60 * 1000;
-				auth.signInBlockedUntil = new Date(
-					Date.now() + blockedDuration
-				);
+				auth.signInBlockedUntil = new Date(Date.now() + blockedDuration);
 				await auth.save();
 				return sendResponse(
 					res,
@@ -206,13 +202,9 @@ class AuthController {
 			delete responseAuth.signInFailed;
 			delete responseAuth.signInBlockedUntil;
 
-			const jwt = jsonwebtoken.sign(
-				responseAuth,
-				process.env.SECRET_KEY,
-				{
-					expiresIn: "1h",
-				}
-			);
+			const jwt = jsonwebtoken.sign(responseAuth, process.env.SECRET_KEY, {
+				expiresIn: "1h",
+			});
 
 			responseAuth.token = jwt;
 
@@ -261,8 +253,10 @@ class AuthController {
 
 			const auth = await authModel
 				.findOne({ email: email })
-				.populate("user", "-createdAt -updatedAt -__v")
-				.select("-email -createdAt -updatedAt -__v");
+				.populate("learnerReference", "-createdAt -updatedAt -__v ")
+				.populate("instructorReference", "-createdAt -updatedAt -__v ")
+				.populate("adminReference", "-createdAt -updatedAt -__v ")
+				.select("-_id -email -createdAt -updatedAt -__v");
 
 			if (!auth) {
 				return sendResponse(
@@ -289,17 +283,20 @@ class AuthController {
 				auth._id.toString()
 			);
 
+			const referenceField = `${auth.role}Reference`;
+			const name = auth[referenceField].name;
+
 			const htmlBody = await ejsRenderFile(
 				path.join(__dirname, "..", "views", "forgotPasswordEmail.ejs"),
 				{
-					name: auth.user.name,
+					name: name,
 					resetURL: resetURL,
 				}
 			);
 
 			const result = await transporter.sendMail({
 				from: "skillbase@system.com",
-				to: `${auth.user.name} ${email}`,
+				to: `${name} ${email}`,
 				subject: "Forgot password?",
 				html: htmlBody,
 			});
@@ -309,11 +306,7 @@ class AuthController {
 				auth.resetPasswordToken = resetToken;
 				auth.resetPasswordValidUntil = Date.now() + 60 * 60 * 1000;
 				await auth.save();
-				return sendResponse(
-					res,
-					HTTP_STATUS.OK,
-					"Reset password email sent"
-				);
+				return sendResponse(res, HTTP_STATUS.OK, "Reset password email sent");
 			}
 
 			return sendResponse(
@@ -340,26 +333,15 @@ class AuthController {
 			});
 
 			if (!auth) {
-				return sendResponse(
-					res,
-					HTTP_STATUS.NOT_FOUND,
-					"Invalid request"
-				);
+				return sendResponse(res, HTTP_STATUS.NOT_FOUND, "Invalid request");
 			}
 
 			if (auth.resetPasswordValidUntil < Date.now()) {
 				return sendResponse(res, HTTP_STATUS.GONE, "Expired request");
 			}
 
-			if (
-				auth.resetPasswordToken !== token ||
-				auth.forgotEmailSent === 0
-			) {
-				return sendResponse(
-					res,
-					HTTP_STATUS.UNAUTHORIZED,
-					"Invalid request"
-				);
+			if (auth.resetPasswordToken !== token || auth.forgotEmailSent === 0) {
+				return sendResponse(res, HTTP_STATUS.UNAUTHORIZED, "Invalid request");
 			}
 
 			if (newPassword !== confirmPassword) {
@@ -378,11 +360,9 @@ class AuthController {
 				);
 			}
 
-			const hashedPassword = await bcrypt
-				.hash(newPassword, 10)
-				.then((hash) => {
-					return hash;
-				});
+			const hashedPassword = await bcrypt.hash(newPassword, 10).then((hash) => {
+				return hash;
+			});
 
 			const result = await authModel.findByIdAndUpdate(
 				{ _id: id },
