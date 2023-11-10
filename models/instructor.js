@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-const adminSchema = new mongoose.Schema(
+const instructorSchema = new mongoose.Schema(
 	{
 		email: {
 			type: String,
@@ -20,5 +20,5 @@ const adminSchema = new mongoose.Schema(
 	{ timestamps: true }
 );
 
-const admin = mongoose.model("Admin", adminSchema);
-module.exports = admin;
+const instructor = mongoose.model("Instructor", instructorSchema);
+module.exports = instructor;

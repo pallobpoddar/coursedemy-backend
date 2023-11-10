@@ -9,7 +9,10 @@ const multer = require("multer");
 const HTTP_STATUS = require("./constants/statusCodes");
 const sendResponse = require("./utils/commonResponse");
 const authRouter = require("./routes/authRoutes");
-const userRouter = require("./routes/userRoutes");
+const learnerRouter = require("./routes/learnerRoutes");
+const instructorRouter = require("./routes/instructorRoutes");
+const courseRouter = require("./routes/courseRoutes");
+const subcategoryRouter = require("./routes/subcategoryRoutes");
 const databaseConnection = require("./configs/database");
 
 const accessLogStream = fs.createWriteStream(
@@ -40,7 +43,10 @@ app.use((err, req, res, next) => {
 app.use(morgan("combined", { stream: accessLogStream }));
 
 app.use("/api/auths", authRouter);
-app.use("/api/users", userRouter);
+app.use("/api/learners", learnerRouter);
+app.use("/api/instructors", instructorRouter);
+app.use("/api/courses", courseRouter);
+app.use("/api/subcategories", subcategoryRouter);
 app.use(async (req, res) => {
 	return sendResponse(
 		res,

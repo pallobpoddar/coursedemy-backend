@@ -1,27 +1,27 @@
 const { validationResult } = require("express-validator");
-const userModel = require("../models/user");
 const authModel = require("../models/auth");
+const instructorModel = require("../models/instructor");
 const sendResponse = require("../utils/commonResponse");
 const HTTP_STATUS = require("../constants/statusCodes");
 
 class UserController {
 	async getAll(req, res) {
 		try {
-			const users = await userModel
+			const instructors = await instructorModel
 				.find({})
 				.select("-createdAt -updatedAt -__v");
 
-			if (users.length === 0) {
-				return sendResponse(res, HTTP_STATUS.OK, "No user is found");
+			if (instructors.length === 0) {
+				return sendResponse(res, HTTP_STATUS.OK, "No instructor is found");
 			}
 
 			return sendResponse(
 				res,
 				HTTP_STATUS.OK,
-				"Successfully received all users",
+				"Successfully received all instructors",
 				{
-					result: users,
-					total: users.length,
+					result: instructors,
+					total: instructors.length,
 				}
 			);
 		} catch (error) {
@@ -54,7 +54,7 @@ class UserController {
 				return sendResponse(
 					res,
 					HTTP_STATUS.UNPROCESSABLE_ENTITY,
-					"Failed to update the user",
+					"Failed to update the learner",
 					validation
 				);
 			}
@@ -71,7 +71,7 @@ class UserController {
 				);
 			}
 
-			const user = await userModel
+			const learner = await instructorModel
 				.findByIdAndUpdate(
 					{ _id: id },
 					{
@@ -82,11 +82,11 @@ class UserController {
 				)
 				.select("-createdAt -updatedAt -__v");
 
-			if (!user) {
+			if (!learner) {
 				return sendResponse(
 					res,
 					HTTP_STATUS.NOT_FOUND,
-					"User is not registered",
+					"Learner is not registered",
 					"Not found"
 				);
 			}
@@ -94,8 +94,8 @@ class UserController {
 			return sendResponse(
 				res,
 				HTTP_STATUS.OK,
-				"Successfully updated the user",
-				user
+				"Successfully updated the learner",
+				learner
 			);
 		} catch (error) {
 			return sendResponse(
@@ -114,24 +114,24 @@ class UserController {
 				return sendResponse(
 					res,
 					HTTP_STATUS.UNPROCESSABLE_ENTITY,
-					"Failed to delete the user",
+					"Failed to delete the learner",
 					validation
 				);
 			}
 
 			const { id } = req.params;
 
-			const userInfo = await userModel.findById({ _id: id });
+			const userInfo = await instructorModel.findById({ _id: id });
 			if (!userInfo) {
 				return sendResponse(
 					res,
 					HTTP_STATUS.NOT_FOUND,
-					"User is not registered",
+					"Learner is not registered",
 					"Not found"
 				);
 			}
 
-			const user = await userModel.findByIdAndDelete({ _id: id });
+			const learner = await instructorModel.findByIdAndDelete({ _id: id });
 			const authInfo = await authModel.findOneAndDelete({
 				email: userInfo.email,
 			});
@@ -139,7 +139,7 @@ class UserController {
 			return sendResponse(
 				res,
 				HTTP_STATUS.OK,
-				`Successfully deleted the user with ${id} id`
+				`Successfully deleted the learner with ${id} id`
 			);
 		} catch (error) {
 			return sendResponse(
