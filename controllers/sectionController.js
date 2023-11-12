@@ -1,18 +1,13 @@
 const { validationResult } = require("express-validator");
 const courseModel = require("../models/course");
-const categoryModel = require("../models/category");
-const instructorModel = require("../models/instructor");
+const sectionModel = require("../models/section");
 const sendResponse = require("../utils/commonResponse");
 const HTTP_STATUS = require("../constants/statusCodes");
 
-class CourseController {
+class SectionController {
 	async create(req, res) {
 		try {
-			const allowedProperties = [
-				"instructorReference",
-				"title",
-				"category",
-			];
+			const allowedProperties = ["courseReference", "title"];
 			const unexpectedProps = Object.keys(req.body).filter(
 				(key) => !allowedProperties.includes(key)
 			);
@@ -20,7 +15,7 @@ class CourseController {
 				return sendResponse(
 					res,
 					HTTP_STATUS.UNPROCESSABLE_ENTITY,
-					"Failed to create the course",
+					"Failed to create the section",
 					`Unexpected properties: ${unexpectedProps.join(", ")}`
 				);
 			}
@@ -30,44 +25,33 @@ class CourseController {
 				return sendResponse(
 					res,
 					HTTP_STATUS.UNPROCESSABLE_ENTITY,
-					"Failed to create the course",
+					"Failed to create the section",
 					validation
 				);
 			}
 
-			const { instructorReference, title, category } = req.body;
+			const { courseReference, title } = req.body;
 
-			const instructor = await instructorModel.findById({
-				_id: instructorReference,
+			const course = await courseModel.findById({
+				_id: courseReference,
 			});
-			if (!instructor) {
+			if (!course) {
 				return sendResponse(
 					res,
 					HTTP_STATUS.UNAUTHORIZED,
-					"Instructor is not registered",
+					"Course is not registered",
 					"Unauthorized"
 				);
 			}
 
-			const categoryInfo = await categoryModel.findOne({
-				name: category,
-			});
-			if (!categoryInfo) {
-				return sendResponse(
-					res,
-					HTTP_STATUS.UNAUTHORIZED,
-					"Category is not registered",
-					"Unauthorized"
-				);
-			}
-
-			const course = await courseModel.create({
-				instructorReference: instructorReference,
+			const section = await sectionModel.create({
 				title: title,
-				category: categoryInfo._id,
 			});
 
-			const filteredInfo = course.toObject();
+			course.sections.push(section._id);
+			await course.save();
+
+			const filteredInfo = section.toObject();
 			delete filteredInfo.createdAt;
 			delete filteredInfo.updatedAt;
 			delete filteredInfo.__v;
@@ -75,7 +59,7 @@ class CourseController {
 			return sendResponse(
 				res,
 				HTTP_STATUS.OK,
-				"Successfully created the course",
+				"Successfully created the section",
 				filteredInfo
 			);
 		} catch (error) {
@@ -89,4 +73,4 @@ class CourseController {
 	}
 }
 
-module.exports = new CourseController();
+module.exports = new SectionController();

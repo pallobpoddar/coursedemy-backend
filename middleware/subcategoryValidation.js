@@ -4,6 +4,7 @@ const subcategoryValidator = {
 	create: [
 		body("name")
 			.exists()
+			.bail()
 			.withMessage("Name is required")
 			.isString()
 			.withMessage("Invalid name")

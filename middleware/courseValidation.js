@@ -2,9 +2,16 @@ const { body } = require("express-validator");
 
 const courseValidator = {
 	create: [
+		body("instructorReference")
+			.exists()
+			.withMessage("Instructor reference is required")
+			.bail()
+			.isMongoId()
+			.withMessage("Invalid MongoDB Id"),
 		body("title")
 			.exists()
 			.withMessage("Title is required")
+			.bail()
 			.isString()
 			.withMessage("Invalid title")
 			.bail()
@@ -14,30 +21,19 @@ const courseValidator = {
 			.bail()
 			.isLength({ max: 100 })
 			.withMessage("Character limit exceeded"),
-		body("description")
+		body("category")
 			.exists()
-			.withMessage("Description is required")
+			.withMessage("Category is required")
+			.bail()
 			.isString()
-			.withMessage("Invalid description")
+			.withMessage("Invalid category")
 			.bail()
 			.trim()
 			.notEmpty()
-			.withMessage("Description is required")
-			.bail()
-			.isLength({ max: 2000 })
-			.withMessage("Character limit exceeded"),
-		body("language")
-			.exists()
-			.withMessage("Language is required")
-			.isString()
-			.withMessage("Invalid language")
-			.bail()
-			.trim()
-			.notEmpty()
-			.withMessage("Language is required")
+			.withMessage("Category is required")
 			.bail()
 			.isLength({ max: 50 })
-			.withMessage("Language limit exceeded"),
+			.withMessage("Character limit exceeded"),
 	],
 };
 

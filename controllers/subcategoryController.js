@@ -14,7 +14,7 @@ class SubcategoryController {
 				return sendResponse(
 					res,
 					HTTP_STATUS.UNPROCESSABLE_ENTITY,
-					"Failed to create the subcategoryInfo",
+					"Failed to create the subcategory",
 					`Unexpected properties: ${unexpectedProps.join(", ")}`
 				);
 			}
@@ -24,7 +24,7 @@ class SubcategoryController {
 				return sendResponse(
 					res,
 					HTTP_STATUS.UNPROCESSABLE_ENTITY,
-					"Failed to create the subcategoryInfo",
+					"Failed to create the subcategory",
 					validation
 				);
 			}
