@@ -1,18 +1,13 @@
 const { validationResult } = require("express-validator");
-const courseModel = require("../models/course");
 const categoryModel = require("../models/category");
-const instructorModel = require("../models/instructor");
+const subcategoryModel = require("../models/subcategory");
 const sendResponse = require("../utils/commonResponse");
 const HTTP_STATUS = require("../constants/statusCodes");
 
-class CourseController {
+class CategoryController {
 	async create(req, res) {
 		try {
-			const allowedProperties = [
-				"instructorReference",
-				"title",
-				"category",
-			];
+			const allowedProperties = ["name", "subcategory"];
 			const unexpectedProps = Object.keys(req.body).filter(
 				(key) => !allowedProperties.includes(key)
 			);
@@ -20,7 +15,7 @@ class CourseController {
 				return sendResponse(
 					res,
 					HTTP_STATUS.UNPROCESSABLE_ENTITY,
-					"Failed to create the course",
+					"Failed to create the category",
 					`Unexpected properties: ${unexpectedProps.join(", ")}`
 				);
 			}
@@ -30,44 +25,34 @@ class CourseController {
 				return sendResponse(
 					res,
 					HTTP_STATUS.UNPROCESSABLE_ENTITY,
-					"Failed to create the course",
+					"Failed to create the category",
 					validation
 				);
 			}
 
-			const { instructorReference, title, category } = req.body;
-
-			const instructor = await instructorModel.findById({
-				_id: instructorReference,
-			});
-			if (!instructor) {
-				return sendResponse(
-					res,
-					HTTP_STATUS.UNAUTHORIZED,
-					"Instructor is not registered",
-					"Unauthorized"
-				);
-			}
-
+			const { name, subcategory } = req.body;
 			const categoryInfo = await categoryModel.findOne({
-				name: category,
+				name: name,
 			});
-			if (!categoryInfo) {
+			if (categoryInfo) {
 				return sendResponse(
 					res,
 					HTTP_STATUS.UNAUTHORIZED,
-					"Category is not registered",
+					"Category already exists",
 					"Unauthorized"
 				);
 			}
 
-			const course = await courseModel.create({
-				instructorReference: instructorReference,
-				title: title,
-				category: categoryInfo._id,
+			const subcategoryInfo = await subcategoryModel.findOne({
+				name: subcategory,
 			});
 
-			const filteredInfo = course.toObject();
+			const category = await categoryModel.create({
+				name: name,
+				subcategory: subcategoryInfo._id,
+			});
+
+			const filteredInfo = category.toObject();
 			delete filteredInfo.createdAt;
 			delete filteredInfo.updatedAt;
 			delete filteredInfo.__v;
@@ -75,7 +60,7 @@ class CourseController {
 			return sendResponse(
 				res,
 				HTTP_STATUS.OK,
-				"Successfully created the course",
+				"Successfully created the category",
 				filteredInfo
 			);
 		} catch (error) {
@@ -89,4 +74,4 @@ class CourseController {
 	}
 }
 
-module.exports = new CourseController();
+module.exports = new CategoryController();

@@ -8,15 +8,11 @@ const categorySchema = new mongoose.Schema(
 			unique: [true, "Category already exists"],
 			maxLength: [50, "Character limit exceeded"],
 		},
-		subcategories: {
-			type: [
-				{
-					subcategory: {
-						type: mongoose.Types.ObjectId,
-						required: [true, "Subcategory is required"],
-					},
-				},
-			],
+
+		subcategory: {
+			type: mongoose.Types.ObjectId,
+			ref: "Subcategory",
+			required: [true, "Subcategory is required"],
 		},
 	},
 	{ timestamps: true }

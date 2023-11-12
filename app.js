@@ -12,6 +12,9 @@ const authRouter = require("./routes/authRoutes");
 const learnerRouter = require("./routes/learnerRoutes");
 const instructorRouter = require("./routes/instructorRoutes");
 const courseRouter = require("./routes/courseRoutes");
+const sectionRouter = require("./routes/sectionRoutes");
+const lectureRouter = require("./routes/lectureRoutes");
+const categoryRouter = require("./routes/categoryRoutes");
 const subcategoryRouter = require("./routes/subcategoryRoutes");
 const databaseConnection = require("./configs/database");
 
@@ -46,7 +49,10 @@ app.use("/api/auths", authRouter);
 app.use("/api/learners", learnerRouter);
 app.use("/api/instructors", instructorRouter);
 app.use("/api/courses", courseRouter);
+app.use("/api/sections", sectionRouter);
+app.use("/api/categories", categoryRouter);
 app.use("/api/subcategories", subcategoryRouter);
+app.use("/api/lectures", lectureRouter);
 app.use(async (req, res) => {
 	return sendResponse(
 		res,
