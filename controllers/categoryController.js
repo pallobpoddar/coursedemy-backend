@@ -7,7 +7,7 @@ const HTTP_STATUS = require("../constants/statusCodes");
 class CategoryController {
 	async create(req, res) {
 		try {
-			const allowedProperties = ["name", "subcategory"];
+			const allowedProperties = ["name"];
 			const unexpectedProps = Object.keys(req.body).filter(
 				(key) => !allowedProperties.includes(key)
 			);
@@ -30,7 +30,7 @@ class CategoryController {
 				);
 			}
 
-			const { name, subcategory } = req.body;
+			const { name } = req.body;
 			const categoryInfo = await categoryModel.findOne({
 				name: name,
 			});
@@ -43,13 +43,8 @@ class CategoryController {
 				);
 			}
 
-			const subcategoryInfo = await subcategoryModel.findOne({
-				name: subcategory,
-			});
-
 			const category = await categoryModel.create({
 				name: name,
-				subcategory: subcategoryInfo._id,
 			});
 
 			const filteredInfo = category.toObject();

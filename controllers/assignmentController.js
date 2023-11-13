@@ -1,14 +1,19 @@
 const { validationResult } = require("express-validator");
-const sectionModel = require("../models/section");
-const lectureModel = require("../models/lecture");
+const courseModel = require("../models/course");
+const assignmentModel = require("../models/assignment");
 const sendResponse = require("../utils/commonResponse");
 const HTTP_STATUS = require("../constants/statusCodes");
 const { uploadToS3 } = require("../configs/file");
 
-class LectureController {
+class AssignmentController {
 	async create(req, res) {
 		try {
-			const allowedProperties = ["sectionReference", "title"];
+			const allowedProperties = [
+				"courseReference",
+				"title",
+				"totalMarks",
+				"passMarks",
+			];
 			const unexpectedProps = Object.keys(req.body).filter(
 				(key) => !allowedProperties.includes(key)
 			);
@@ -16,7 +21,7 @@ class LectureController {
 				return sendResponse(
 					res,
 					HTTP_STATUS.UNPROCESSABLE_ENTITY,
-					"Failed to create the lecture",
+					"Failed to create the assignment",
 					`Unexpected properties: ${unexpectedProps.join(", ")}`
 				);
 			}
@@ -26,21 +31,21 @@ class LectureController {
 				return sendResponse(
 					res,
 					HTTP_STATUS.UNPROCESSABLE_ENTITY,
-					"Failed to create the lecture",
+					"Failed to create the assignment",
 					validation
 				);
 			}
 
-			const { sectionReference, title } = req.body;
+			const { courseReference, title, totalMarks, passMarks } = req.body;
 
-			const section = await sectionModel.findById({
-				_id: sectionReference,
+			const course = await courseModel.findById({
+				_id: courseReference,
 			});
-			if (!section) {
+			if (!course) {
 				return sendResponse(
 					res,
 					HTTP_STATUS.UNAUTHORIZED,
-					"Section is not registered",
+					"Course is not registered",
 					"Unauthorized"
 				);
 			}
@@ -50,15 +55,17 @@ class LectureController {
 				Key: req.file.originalname,
 				Body: req.file.buffer,
 			};
-			const content = await uploadToS3(params);
+			const question = await uploadToS3(params);
 
-			const lecture = await lectureModel.create({
-				sectionReference: sectionReference,
+			const assignment = await assignmentModel.create({
+				courseReference: courseReference,
 				title: title,
-				content: content,
+				question: question,
+				totalMarks: totalMarks,
+				passMarks: passMarks,
 			});
 
-			const filteredInfo = lecture.toObject();
+			const filteredInfo = assignment.toObject();
 			delete filteredInfo.createdAt;
 			delete filteredInfo.updatedAt;
 			delete filteredInfo.__v;
@@ -66,7 +73,7 @@ class LectureController {
 			return sendResponse(
 				res,
 				HTTP_STATUS.OK,
-				"Successfully created the lecture",
+				"Successfully created the assignment",
 				filteredInfo
 			);
 		} catch (error) {
@@ -80,4 +87,4 @@ class LectureController {
 	}
 }
 
-module.exports = new LectureController();
+module.exports = new AssignmentController();

@@ -1,10 +1,10 @@
 const { body } = require("express-validator");
 
-const courseValidator = {
+const assignmentValidator = {
 	create: [
-		body("instructorReference")
+		body("courseReference")
 			.exists()
-			.withMessage("Instructor reference is required")
+			.withMessage("Course reference is required")
 			.bail()
 			.isMongoId()
 			.withMessage("Invalid MongoDB Id"),
@@ -21,19 +21,19 @@ const courseValidator = {
 			.bail()
 			.isLength({ max: 100 })
 			.withMessage("Character limit exceeded"),
-		body("categoryReference")
+		body("totalMarks")
 			.exists()
-			.withMessage("Category reference is required")
+			.withMessage("Total marks is required")
 			.bail()
-			.isMongoId()
-			.withMessage("Invalid MongoDB Id"),
-		body("subcategoryReference")
+			.isNumeric()
+			.withMessage("Invalid total marks"),
+		body("passMarks")
 			.exists()
-			.withMessage("Subcategory reference is required")
+			.withMessage("Pass marks is required")
 			.bail()
-			.isMongoId()
-			.withMessage("Invalid MongoDB Id"),
+			.isNumeric()
+			.withMessage("Invalid pass marks"),
 	],
 };
 
-module.exports = courseValidator;
+module.exports = assignmentValidator;

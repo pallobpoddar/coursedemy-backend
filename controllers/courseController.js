@@ -1,6 +1,7 @@
 const { validationResult } = require("express-validator");
 const courseModel = require("../models/course");
 const categoryModel = require("../models/category");
+const subcategoryModel = require("../models/subcategory");
 const instructorModel = require("../models/instructor");
 const sendResponse = require("../utils/commonResponse");
 const HTTP_STATUS = require("../constants/statusCodes");
@@ -11,7 +12,8 @@ class CourseController {
 			const allowedProperties = [
 				"instructorReference",
 				"title",
-				"category",
+				"categoryReference",
+				"subcategoryReference",
 			];
 			const unexpectedProps = Object.keys(req.body).filter(
 				(key) => !allowedProperties.includes(key)
@@ -35,7 +37,12 @@ class CourseController {
 				);
 			}
 
-			const { instructorReference, title, category } = req.body;
+			const {
+				instructorReference,
+				title,
+				categoryReference,
+				subcategoryReference,
+			} = req.body;
 
 			const instructor = await instructorModel.findById({
 				_id: instructorReference,
@@ -49,10 +56,10 @@ class CourseController {
 				);
 			}
 
-			const categoryInfo = await categoryModel.findOne({
-				name: category,
+			const category = await categoryModel.findById({
+				_id: categoryReference,
 			});
-			if (!categoryInfo) {
+			if (!category) {
 				return sendResponse(
 					res,
 					HTTP_STATUS.UNAUTHORIZED,
@@ -61,10 +68,23 @@ class CourseController {
 				);
 			}
 
+			const subcategory = await subcategoryModel.findOne({
+				_id: subcategoryReference,
+			});
+			if (!subcategory) {
+				return sendResponse(
+					res,
+					HTTP_STATUS.UNAUTHORIZED,
+					"Subcategory is not registered",
+					"Unauthorized"
+				);
+			}
+
 			const course = await courseModel.create({
 				instructorReference: instructorReference,
 				title: title,
-				category: categoryInfo._id,
+				categoryReference: categoryReference,
+				subcategoryReference: subcategoryReference,
 			});
 
 			const filteredInfo = course.toObject();

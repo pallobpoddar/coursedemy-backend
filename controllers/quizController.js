@@ -1,14 +1,14 @@
 const { validationResult } = require("express-validator");
 const sectionModel = require("../models/section");
-const lectureModel = require("../models/lecture");
+const quizModel = require("../models/quiz");
 const sendResponse = require("../utils/commonResponse");
 const HTTP_STATUS = require("../constants/statusCodes");
 const { uploadToS3 } = require("../configs/file");
 
-class LectureController {
+class QuizController {
 	async create(req, res) {
 		try {
-			const allowedProperties = ["sectionReference", "title"];
+			const allowedProperties = ["sectionReference", "title", "passMarks"];
 			const unexpectedProps = Object.keys(req.body).filter(
 				(key) => !allowedProperties.includes(key)
 			);
@@ -16,7 +16,7 @@ class LectureController {
 				return sendResponse(
 					res,
 					HTTP_STATUS.UNPROCESSABLE_ENTITY,
-					"Failed to create the lecture",
+					"Failed to create the quiz",
 					`Unexpected properties: ${unexpectedProps.join(", ")}`
 				);
 			}
@@ -26,12 +26,12 @@ class LectureController {
 				return sendResponse(
 					res,
 					HTTP_STATUS.UNPROCESSABLE_ENTITY,
-					"Failed to create the lecture",
+					"Failed to create the quiz",
 					validation
 				);
 			}
 
-			const { sectionReference, title } = req.body;
+			const { sectionReference, title, passMarks } = req.body;
 
 			const section = await sectionModel.findById({
 				_id: sectionReference,
@@ -45,20 +45,13 @@ class LectureController {
 				);
 			}
 
-			const params = {
-				Bucket: `pallob-inception-bucket/final-project/${req.awsFolder}`,
-				Key: req.file.originalname,
-				Body: req.file.buffer,
-			};
-			const content = await uploadToS3(params);
-
-			const lecture = await lectureModel.create({
+			const quiz = await quizModel.create({
 				sectionReference: sectionReference,
 				title: title,
-				content: content,
+				passMarks: passMarks,
 			});
 
-			const filteredInfo = lecture.toObject();
+			const filteredInfo = quiz.toObject();
 			delete filteredInfo.createdAt;
 			delete filteredInfo.updatedAt;
 			delete filteredInfo.__v;
@@ -66,7 +59,7 @@ class LectureController {
 			return sendResponse(
 				res,
 				HTTP_STATUS.OK,
-				"Successfully created the lecture",
+				"Successfully created the quiz",
 				filteredInfo
 			);
 		} catch (error) {
@@ -80,4 +73,4 @@ class LectureController {
 	}
 }
 
-module.exports = new LectureController();
+module.exports = new QuizController();

@@ -15,19 +15,6 @@ const categoryValidator = {
 			.bail()
 			.isLength({ max: 50 })
 			.withMessage("Character limit exceeded"),
-		body("subcategory")
-			.exists()
-			.bail()
-			.withMessage("Subcategory is required")
-			.isString()
-			.withMessage("Invalid subcategory")
-			.bail()
-			.trim()
-			.notEmpty()
-			.withMessage("Subcategory is required")
-			.bail()
-			.isLength({ max: 50 })
-			.withMessage("Character limit exceeded"),
 	],
 };
 

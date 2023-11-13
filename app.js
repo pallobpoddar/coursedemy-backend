@@ -16,6 +16,11 @@ const sectionRouter = require("./routes/sectionRoutes");
 const lectureRouter = require("./routes/lectureRoutes");
 const categoryRouter = require("./routes/categoryRoutes");
 const subcategoryRouter = require("./routes/subcategoryRoutes");
+const assignmentRouter = require("./routes/assignmentRoutes");
+const quizRouter = require("./routes/quizRoutes");
+const quizQuestionRouter = require("./routes/quizQuestionRoutes");
+const cartRouter = require("./routes/cartRouter");
+const subscriptionRouter = require("./routes/subscriptionRoutes");
 const databaseConnection = require("./configs/database");
 
 const accessLogStream = fs.createWriteStream(
@@ -53,6 +58,11 @@ app.use("/api/sections", sectionRouter);
 app.use("/api/categories", categoryRouter);
 app.use("/api/subcategories", subcategoryRouter);
 app.use("/api/lectures", lectureRouter);
+app.use("/api/assignments", assignmentRouter);
+app.use("/api/quizzes", quizRouter);
+app.use("/api/quizQuestions", quizQuestionRouter);
+app.use("/api/carts", cartRouter);
+app.use("/api/subscriptions", subscriptionRouter);
 app.use(async (req, res) => {
 	return sendResponse(
 		res,
@@ -63,7 +73,6 @@ app.use(async (req, res) => {
 });
 
 app.use((err, req, res, next) => {
-	console.log(err);
 	if (err instanceof multer.MulterError) {
 		return sendResponse(res, 404, err.message);
 	} else {

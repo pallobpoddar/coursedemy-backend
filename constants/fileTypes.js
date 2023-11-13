@@ -1,12 +1,13 @@
 const fileTypes = [
-	".jpg",
-	".png",
-	".jpeg",
-	".txt",
-	".pdf",
-	".doc",
-	".ppt",
-	".mkv",
-	".mp4",
+	"jpg",
+	"png",
+	"jpeg",
+	"txt",
+	"pdf",
+	"doc",
+	"xlsx",
+	"ppt",
+	"mkv",
+	"mp4",
 ];
 module.exports = fileTypes;
