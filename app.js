@@ -21,7 +21,9 @@ const quizRouter = require("./routes/quizRoutes");
 const quizQuestionRouter = require("./routes/quizQuestionRoutes");
 const cartRouter = require("./routes/cartRouter");
 const subscriptionRouter = require("./routes/subscriptionRoutes");
+const reviewRouter = require("./routes/reviewRoutes");
 const databaseConnection = require("./configs/database");
+const reviewController = require("./controllers/reviewController");
 
 const accessLogStream = fs.createWriteStream(
 	path.join(__dirname, "logFile.log"),
@@ -63,6 +65,7 @@ app.use("/api/quizzes", quizRouter);
 app.use("/api/quizQuestions", quizQuestionRouter);
 app.use("/api/carts", cartRouter);
 app.use("/api/subscriptions", subscriptionRouter);
+app.use("/api/reviews", reviewController);
 app.use(async (req, res) => {
 	return sendResponse(
 		res,
