@@ -1,14 +1,19 @@
 const { validationResult } = require("express-validator");
-const sectionModel = require("../models/section");
-const lectureModel = require("../models/lecture");
+const quizModel = require("../models/quiz");
+const quizQuestionModel = require("../models/quizQuestion");
 const sendResponse = require("../utils/commonResponse");
 const HTTP_STATUS = require("../constants/statusCodes");
-const { uploadToS3 } = require("../configs/file");
 
-class LectureController {
+class QuizQuestionController {
 	async create(req, res) {
 		try {
-			const allowedProperties = ["sectionReference", "title"];
+			const allowedProperties = [
+				"quizReference",
+				"question",
+				"options",
+				"answer",
+				"marks",
+			];
 			const unexpectedProps = Object.keys(req.body).filter(
 				(key) => !allowedProperties.includes(key)
 			);
@@ -16,7 +21,7 @@ class LectureController {
 				return sendResponse(
 					res,
 					HTTP_STATUS.UNPROCESSABLE_ENTITY,
-					"Failed to create the lecture",
+					"Failed to create the quiz question",
 					`Unexpected properties: ${unexpectedProps.join(", ")}`
 				);
 			}
@@ -26,39 +31,34 @@ class LectureController {
 				return sendResponse(
 					res,
 					HTTP_STATUS.UNPROCESSABLE_ENTITY,
-					"Failed to create the lecture",
+					"Failed to create the quiz question",
 					validation
 				);
 			}
 
-			const { sectionReference, title } = req.body;
+			const { quizReference, question, options, answer, marks } = req.body;
 
-			const section = await sectionModel.findById({
-				_id: sectionReference,
+			const quiz = await quizModel.findById({
+				_id: quizReference,
 			});
-			if (!section) {
+			if (!quiz) {
 				return sendResponse(
 					res,
 					HTTP_STATUS.UNAUTHORIZED,
-					"Section is not registered",
+					"Quiz is not registered",
 					"Unauthorized"
 				);
 			}
 
-			const params = {
-				Bucket: `pallob-inception-bucket/final-project/${req.awsFolder}`,
-				Key: req.file.originalname,
-				Body: req.file.buffer,
-			};
-			const content = await uploadToS3(params);
-
-			const lecture = await lectureModel.create({
-				sectionReference: sectionReference,
-				title: title,
-				content: content,
+			const quizQuestion = await quizQuestionModel.create({
+				quizReference: quizReference,
+				question: question,
+				options: options,
+				answer: answer,
+				marks: marks,
 			});
 
-			const filteredInfo = lecture.toObject();
+			const filteredInfo = quizQuestion.toObject();
 			delete filteredInfo.createdAt;
 			delete filteredInfo.updatedAt;
 			delete filteredInfo.__v;
@@ -66,7 +66,7 @@ class LectureController {
 			return sendResponse(
 				res,
 				HTTP_STATUS.OK,
-				"Successfully created the lecture",
+				"Successfully created the quiz question",
 				filteredInfo
 			);
 		} catch (error) {
@@ -80,4 +80,4 @@ class LectureController {
 	}
 }
 
-module.exports = new LectureController();
+module.exports = new QuizQuestionController();

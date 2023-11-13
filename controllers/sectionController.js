@@ -45,11 +45,9 @@ class SectionController {
 			}
 
 			const section = await sectionModel.create({
+				courseReference: courseReference,
 				title: title,
 			});
-
-			course.sections.push(section._id);
-			await course.save();
 
 			const filteredInfo = section.toObject();
 			delete filteredInfo.createdAt;

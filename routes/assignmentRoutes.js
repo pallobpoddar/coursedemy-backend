@@ -1,7 +1,7 @@
 const express = require("express");
-const lectureRoutes = express();
-const lectureController = require("../controllers/lectureController");
-const lectureValidator = require("../middleware/lectureValidation");
+const assignmentRoutes = express();
+const assignmentController = require("../controllers/assignmentController");
+const assignmentValidator = require("../middleware/assignmentValidation");
 const fileValidator = require("../middleware/fileValidation");
 const { upload } = require("../configs/file");
 const {
@@ -10,14 +10,14 @@ const {
 	isInstructorOrAdmin,
 } = require("../middleware/tokenValidation");
 
-lectureRoutes.post(
+assignmentRoutes.post(
 	"/create",
 	isAuthenticated,
 	isInstructorOrAdmin,
 	upload.single("fileInput"),
 	fileValidator.uploadFile,
-	lectureValidator.create,
-	lectureController.create
+	assignmentValidator.create,
+	assignmentController.create
 );
 
-module.exports = lectureRoutes;
+module.exports = assignmentRoutes;

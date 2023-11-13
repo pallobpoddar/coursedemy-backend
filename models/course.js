@@ -17,15 +17,13 @@ const courseSchema = new mongoose.Schema(
 			required: [true, "IsApproved is required"],
 			default: false,
 		},
-		sections: [
-			{
-				type: mongoose.Types.ObjectId,
-				ref: "Section",
-			},
-		],
-		category: {
+		categoryReference: {
 			type: mongoose.Types.ObjectId,
 			required: [true, "Category is required"],
+		},
+		subcategoryReference: {
+			type: mongoose.Types.ObjectId,
+			required: [true, "Subcategory is required"],
 		},
 	},
 	{ timestamps: true }

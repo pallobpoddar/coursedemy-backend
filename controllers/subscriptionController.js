@@ -1,14 +1,14 @@
 const { validationResult } = require("express-validator");
-const sectionModel = require("../models/section");
-const lectureModel = require("../models/lecture");
+const courseModel = require("../models/course");
+const learnerModel = require("../models/learner");
+const subscriptionModel = require("../models/subscription");
 const sendResponse = require("../utils/commonResponse");
 const HTTP_STATUS = require("../constants/statusCodes");
-const { uploadToS3 } = require("../configs/file");
 
-class LectureController {
+class SubscriptionController {
 	async create(req, res) {
 		try {
-			const allowedProperties = ["sectionReference", "title"];
+			const allowedProperties = ["learnerReference", "courseReference"];
 			const unexpectedProps = Object.keys(req.body).filter(
 				(key) => !allowedProperties.includes(key)
 			);
@@ -16,7 +16,7 @@ class LectureController {
 				return sendResponse(
 					res,
 					HTTP_STATUS.UNPROCESSABLE_ENTITY,
-					"Failed to create the lecture",
+					"Failed to create the subscription",
 					`Unexpected properties: ${unexpectedProps.join(", ")}`
 				);
 			}
@@ -26,39 +26,43 @@ class LectureController {
 				return sendResponse(
 					res,
 					HTTP_STATUS.UNPROCESSABLE_ENTITY,
-					"Failed to create the lecture",
+					"Failed to create the subscription",
 					validation
 				);
 			}
 
-			const { sectionReference, title } = req.body;
+			const { learnerReference, courseReference } = req.body;
 
-			const section = await sectionModel.findById({
-				_id: sectionReference,
+			const learner = await learnerModel.findById({
+				_id: learnerReference,
 			});
-			if (!section) {
+			if (!learner) {
 				return sendResponse(
 					res,
 					HTTP_STATUS.UNAUTHORIZED,
-					"Section is not registered",
+					"Learner is not registered",
 					"Unauthorized"
 				);
 			}
 
-			const params = {
-				Bucket: `pallob-inception-bucket/final-project/${req.awsFolder}`,
-				Key: req.file.originalname,
-				Body: req.file.buffer,
-			};
-			const content = await uploadToS3(params);
+			const course = await courseModel.findById({
+				_id: courseReference,
+			});
+			if (!course) {
+				return sendResponse(
+					res,
+					HTTP_STATUS.UNAUTHORIZED,
+					"Course is not registered",
+					"Unauthorized"
+				);
+			}
 
-			const lecture = await lectureModel.create({
-				sectionReference: sectionReference,
-				title: title,
-				content: content,
+			const subscription = await subscriptionModel.create({
+				learnerReference: learnerReference,
+				courseReference: courseReference,
 			});
 
-			const filteredInfo = lecture.toObject();
+			const filteredInfo = subscription.toObject();
 			delete filteredInfo.createdAt;
 			delete filteredInfo.updatedAt;
 			delete filteredInfo.__v;
@@ -66,7 +70,7 @@ class LectureController {
 			return sendResponse(
 				res,
 				HTTP_STATUS.OK,
-				"Successfully created the lecture",
+				"Successfully created the section",
 				filteredInfo
 			);
 		} catch (error) {
@@ -80,4 +84,4 @@ class LectureController {
 	}
 }
 
-module.exports = new LectureController();
+module.exports = new SubscriptionController();
