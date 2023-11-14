@@ -6,15 +6,16 @@ const instructorModel = require("../models/instructor");
 const sendResponse = require("../utils/commonResponse");
 const HTTP_STATUS = require("../constants/statusCodes");
 
+const allowedProperties = [
+	"instructorReference",
+	"title",
+	"categoryReference",
+	"subcategoryReference",
+];
+
 class CourseController {
 	async create(req, res) {
 		try {
-			const allowedProperties = [
-				"instructorReference",
-				"title",
-				"categoryReference",
-				"subcategoryReference",
-			];
 			const unexpectedProps = Object.keys(req.body).filter(
 				(key) => !allowedProperties.includes(key)
 			);
@@ -97,6 +98,90 @@ class CourseController {
 				HTTP_STATUS.OK,
 				"Successfully created the course",
 				filteredInfo
+			);
+		} catch (error) {
+			return sendResponse(
+				res,
+				HTTP_STATUS.INTERNAL_SERVER_ERROR,
+				"Internal server error",
+				"Server error"
+			);
+		}
+	}
+
+	async updateOneById(req, res) {
+		try {
+			const unexpectedProps = Object.keys(req.body).filter(
+				(key) => !allowedProperties.includes(key)
+			);
+			if (unexpectedProps.length > 0) {
+				return sendResponse(
+					res,
+					HTTP_STATUS.UNPROCESSABLE_ENTITY,
+					"Failed to create the course",
+					`Unexpected properties: ${unexpectedProps.join(", ")}`
+				);
+			}
+
+			const validation = validationResult(req).array();
+			if (validation.length > 0) {
+				return sendResponse(
+					res,
+					HTTP_STATUS.UNPROCESSABLE_ENTITY,
+					"Failed to create the course",
+					validation
+				);
+			}
+
+			const { id } = req.params;
+			const {
+				instructorReference,
+				title,
+				categoryReference,
+				subcategoryReference,
+			} = req.body;
+
+			if (
+				!instructorReference &&
+				!title &&
+				!categoryReference &&
+				!subcategoryReference
+			) {
+				return sendResponse(
+					res,
+					HTTP_STATUS.BAD_REQUEST,
+					"Invalid request",
+					"Bad request"
+				);
+			}
+
+			const course = await courseModel
+				.findByIdAndUpdate(
+					{ _id: id },
+					{
+						instructorReference: instructorReference,
+						title: title,
+						categoryReference: categoryReference,
+						subcategoryReference: subcategoryReference,
+					},
+					{ new: true }
+				)
+				.select("-createdAt -updatedAt -__v");
+
+			if (!course) {
+				return sendResponse(
+					res,
+					HTTP_STATUS.NOT_FOUND,
+					"Course is not registered",
+					"Not found"
+				);
+			}
+
+			return sendResponse(
+				res,
+				HTTP_STATUS.OK,
+				"Successfully updated the course",
+				book
 			);
 		} catch (error) {
 			return sendResponse(
