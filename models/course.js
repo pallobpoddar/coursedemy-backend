@@ -25,6 +25,14 @@ const courseSchema = new mongoose.Schema(
 			type: mongoose.Types.ObjectId,
 			required: [true, "Subcategory is required"],
 		},
+		thumbnail: {
+			type: String,
+			maxLength: [200, "Character limit exceeded"],
+		},
+		promoVideo: {
+			type: String,
+			maxLength: [200, "Character limit exceeded"],
+		},
 	},
 	{ timestamps: true }
 );

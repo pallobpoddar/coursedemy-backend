@@ -5,6 +5,7 @@ const subcategoryModel = require("../models/subcategory");
 const instructorModel = require("../models/instructor");
 const sendResponse = require("../utils/commonResponse");
 const HTTP_STATUS = require("../constants/statusCodes");
+const { uploadToS3 } = require("../configs/file");
 
 const allowedProperties = [
 	"instructorReference",
@@ -141,11 +142,16 @@ class CourseController {
 				subcategoryReference,
 			} = req.body;
 
+			const thumbnailFile = req.files["thumbnail"][0];
+			const promoVideoFile = req.files["promoVideo"][0];
+
 			if (
 				!instructorReference &&
 				!title &&
 				!categoryReference &&
-				!subcategoryReference
+				!subcategoryReference &&
+				!thumbnailFile &&
+				!promoVideoFile
 			) {
 				return sendResponse(
 					res,
@@ -155,6 +161,20 @@ class CourseController {
 				);
 			}
 
+			const thumbnailParams = {
+				Bucket: `pallob-inception-bucket/final-project/images`,
+				Key: thumbnailFile.originalname,
+				Body: thumbnailFile.buffer,
+			};
+			const thumbnail = await uploadToS3(thumbnailParams);
+
+			const promoVideoParams = {
+				Bucket: `pallob-inception-bucket/final-project/videos`,
+				Key: promoVideoFile.originalname,
+				Body: promoVideoFile.buffer,
+			};
+			const promoVideo = await uploadToS3(promoVideoParams);
+
 			const course = await courseModel
 				.findByIdAndUpdate(
 					{ _id: id },
@@ -163,6 +183,8 @@ class CourseController {
 						title: title,
 						categoryReference: categoryReference,
 						subcategoryReference: subcategoryReference,
+						thumbnail: thumbnail,
+						promoVideo: promoVideo,
 					},
 					{ new: true }
 				)
@@ -181,7 +203,7 @@ class CourseController {
 				res,
 				HTTP_STATUS.OK,
 				"Successfully updated the course",
-				book
+				course
 			);
 		} catch (error) {
 			return sendResponse(
