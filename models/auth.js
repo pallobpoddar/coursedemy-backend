@@ -17,16 +17,17 @@ const authSchema = new mongoose.Schema(
 		email: {
 			type: String,
 			required: [true, "Email is required"],
-			unique: [true, "Email already exists"],
-			maxLength: [64, "Invalid email"],
+			unique: true,
+			maxLength: [320, "Invalid email"],
 		},
 		password: {
 			type: String,
 			required: [true, "Password is required"],
+			maxLength: [60, "Character limit exceeded"],
 		},
 		role: {
 			type: String,
-			required: [true, "Role is required"],
+			default: "learner",
 		},
 		isVerified: {
 			type: Boolean,
