@@ -17,13 +17,7 @@ const HTTP_STATUS = require("../constants/statusCodes");
 class AuthController {
 	async signup(req, res) {
 		try {
-			const allowedProperties = [
-				"email",
-				"password",
-				"confirmPassword",
-				"name",
-				"role",
-			];
+			const allowedProperties = ["name", "email", "password"];
 			const unexpectedProps = Object.keys(req.body).filter(
 				(key) => !allowedProperties.includes(key)
 			);
@@ -46,7 +40,7 @@ class AuthController {
 				);
 			}
 
-			const { email, password, name, role } = req.body;
+			const { name, email, password } = req.body;
 
 			const isEmailRegistered = await authModel.findOne({ email: email });
 			if (isEmailRegistered) {
@@ -58,26 +52,21 @@ class AuthController {
 				);
 			}
 
-			const rolesToModel = {
-				learner: learnerModel,
-				instructor: instructorModel,
-				admin: adminModel,
-			};
-
-			const userModel = rolesToModel[role];
-			const user = await userModel.create({
+			const learner = await learnerModel.create({
 				name: name,
 				email: email,
 			});
 
-			const filteredInfo = user.toObject();
+			const filteredInfo = learner.toObject();
 			delete filteredInfo.createdAt;
 			delete filteredInfo.updatedAt;
 			delete filteredInfo.__v;
 
-			const hashedPassword = await bcrypt.hash(password, 10).then((hash) => {
-				return hash;
-			});
+			const hashedPassword = await bcrypt
+				.hash(password, 10)
+				.then((hash) => {
+					return hash;
+				});
 
 			const referenceProperty = `${role}Reference`;
 
@@ -87,9 +76,8 @@ class AuthController {
 				adminReference: null,
 				email: email,
 				password: hashedPassword,
-				role: role,
 			};
-			authData[referenceProperty] = user._id;
+			authData[referenceProperty] = learner._id;
 
 			await authModel.create(authData).then(() => {
 				return sendResponse(
@@ -100,6 +88,7 @@ class AuthController {
 				);
 			});
 		} catch (error) {
+			console.log(error);
 			return sendResponse(
 				res,
 				HTTP_STATUS.INTERNAL_SERVER_ERROR,
@@ -141,7 +130,9 @@ class AuthController {
 				.populate("learnerReference", "-createdAt -updatedAt -__v ")
 				.populate("instructorReference", "-createdAt -updatedAt -__v ")
 				.populate("adminReference", "-createdAt -updatedAt -__v ")
-				.select("-_id -email -forgotEmailSent -createdAt -updatedAt -__v");
+				.select(
+					"-_id -email -forgotEmailSent -createdAt -updatedAt -__v"
+				);
 
 			if (!auth) {
 				return sendResponse(
@@ -168,7 +159,9 @@ class AuthController {
 				}
 
 				const blockedDuration = 60 * 60 * 1000;
-				auth.signInBlockedUntil = new Date(Date.now() + blockedDuration);
+				auth.signInBlockedUntil = new Date(
+					Date.now() + blockedDuration
+				);
 				await auth.save();
 				return sendResponse(
 					res,
@@ -202,9 +195,13 @@ class AuthController {
 			delete responseAuth.signInFailed;
 			delete responseAuth.signInBlockedUntil;
 
-			const jwt = jsonwebtoken.sign(responseAuth, process.env.SECRET_KEY, {
-				expiresIn: "1h",
-			});
+			const jwt = jsonwebtoken.sign(
+				responseAuth,
+				process.env.SECRET_KEY,
+				{
+					expiresIn: "1h",
+				}
+			);
 
 			responseAuth.token = jwt;
 
@@ -306,7 +303,11 @@ class AuthController {
 				auth.resetPasswordToken = resetToken;
 				auth.resetPasswordValidUntil = Date.now() + 60 * 60 * 1000;
 				await auth.save();
-				return sendResponse(res, HTTP_STATUS.OK, "Reset password email sent");
+				return sendResponse(
+					res,
+					HTTP_STATUS.OK,
+					"Reset password email sent"
+				);
 			}
 
 			return sendResponse(
@@ -333,15 +334,26 @@ class AuthController {
 			});
 
 			if (!auth) {
-				return sendResponse(res, HTTP_STATUS.NOT_FOUND, "Invalid request");
+				return sendResponse(
+					res,
+					HTTP_STATUS.NOT_FOUND,
+					"Invalid request"
+				);
 			}
 
 			if (auth.resetPasswordValidUntil < Date.now()) {
 				return sendResponse(res, HTTP_STATUS.GONE, "Expired request");
 			}
 
-			if (auth.resetPasswordToken !== token || auth.forgotEmailSent === 0) {
-				return sendResponse(res, HTTP_STATUS.UNAUTHORIZED, "Invalid request");
+			if (
+				auth.resetPasswordToken !== token ||
+				auth.forgotEmailSent === 0
+			) {
+				return sendResponse(
+					res,
+					HTTP_STATUS.UNAUTHORIZED,
+					"Invalid request"
+				);
 			}
 
 			if (newPassword !== confirmPassword) {
@@ -360,9 +372,11 @@ class AuthController {
 				);
 			}
 
-			const hashedPassword = await bcrypt.hash(newPassword, 10).then((hash) => {
-				return hash;
-			});
+			const hashedPassword = await bcrypt
+				.hash(newPassword, 10)
+				.then((hash) => {
+					return hash;
+				});
 
 			const result = await authModel.findByIdAndUpdate(
 				{ _id: id },
