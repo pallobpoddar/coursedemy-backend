@@ -1,0 +1,50 @@
+<head>
+	<style>
+		body {
+			margin: 5% 10%;
+			background-color: #ddd6fe;
+			color: black;
+			display: flex;
+			flex-direction: column;
+			gap: 0.25rem;
+		}
+
+		.verify {
+			background-color: #5b21b6;
+			width: 150px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			height: 40px;
+			color: #e7e7e7;
+			text-decoration: none;
+			border-radius: 5px;
+			transition: 0.25s color;
+		}
+
+		.verify:hover {
+			color: #f0abfc;
+		}
+
+        .ignore {
+            size: 30px;
+        }
+	</style>
+</head>
+
+<body>
+	<span>Dear <%= name %></span>
+	<span>Please take a second to confirm <a href="<%= email %>"></a> as your email address.</span>
+	<span
+		>Once you do, you'll be able to access features that require a valid email address. </span
+	>
+	<br />
+	
+	<a href="<%= emailVerificationURL %>" class="verify">Verify email</a>
+	<br />
+	If the button does not work, please paste the URL below into your browser:
+	<a href="<%= emailVerificationURL %>"><%= emailVerificationURL %></a>
+    <span class="ignore"
+		>If you did not sign up or request for email confirmation, please ignore this email.</span
+	>
+</body>
