@@ -69,9 +69,11 @@ class AuthController {
 			delete filteredInfo.updatedAt;
 			delete filteredInfo.__v;
 
-			const hashedPassword = await bcrypt.hash(password, 10).then((hash) => {
-				return hash;
-			});
+			const hashedPassword = await bcrypt
+				.hash(password, 10)
+				.then((hash) => {
+					return hash;
+				});
 
 			const referenceProperty = `${role}Reference`;
 
@@ -130,7 +132,7 @@ class AuthController {
 				.populate("learnerReference", "-createdAt -updatedAt -__v ")
 				.populate("instructorReference", "-createdAt -updatedAt -__v ")
 				.populate("adminReference", "-createdAt -updatedAt -__v ")
-				.select("-_id -email -forgotEmailSent -createdAt -updatedAt -__v");
+				.select("-email -forgotEmailSent -createdAt -updatedAt -__v");
 
 			if (!auth) {
 				return sendResponse(
@@ -157,7 +159,9 @@ class AuthController {
 				}
 
 				const blockedDuration = 60 * 60 * 1000;
-				auth.signInBlockedUntil = new Date(Date.now() + blockedDuration);
+				auth.signInBlockedUntil = new Date(
+					Date.now() + blockedDuration
+				);
 				await auth.save();
 				return sendResponse(
 					res,
@@ -191,9 +195,13 @@ class AuthController {
 			delete responseAuth.signInFailed;
 			delete responseAuth.signInBlockedUntil;
 
-			const jwt = jsonwebtoken.sign(responseAuth, process.env.SECRET_KEY, {
-				expiresIn: "1h",
-			});
+			const jwt = jsonwebtoken.sign(
+				responseAuth,
+				process.env.SECRET_KEY,
+				{
+					expiresIn: "1h",
+				}
+			);
 
 			responseAuth.token = jwt;
 
@@ -240,12 +248,7 @@ class AuthController {
 
 			const { email } = req.body;
 
-			const auth = await authModel
-				.findOne({ email: email })
-				.populate("learnerReference", "-createdAt -updatedAt -__v ")
-				.populate("instructorReference", "-createdAt -updatedAt -__v ")
-				.populate("adminReference", "-createdAt -updatedAt -__v ")
-				.select("-email -createdAt -updatedAt -__v");
+			const auth = await authModel.findOne({ email: email });
 
 			if (!auth) {
 				return sendResponse(
@@ -256,7 +259,9 @@ class AuthController {
 				);
 			}
 
-			const emailVerificationToken = crypto.randomBytes(32).toString("hex");
+			const emailVerificationToken = crypto
+				.randomBytes(32)
+				.toString("hex");
 
 			const emailVerificationURL = path.join(
 				process.env.FRONTEND_URL,
@@ -278,14 +283,14 @@ class AuthController {
 				}
 			);
 
-			const result = await transporter.sendMail({
+			const updatedAuth = await transporter.sendMail({
 				from: "skillbase@system.com",
 				to: `${name} ${email}`,
 				subject: "Confirm your email at Skillbase",
 				html: htmlBody,
 			});
 
-			if (result.messageId) {
+			if (updatedAuth.messageId) {
 				auth.emailVerificationToken = emailVerificationToken;
 				auth.emailVerificationValidUntil = Date.now() + 60 * 60 * 1000;
 				auth.verificationEmailSent += 1;
@@ -293,12 +298,10 @@ class AuthController {
 				return sendResponse(
 					res,
 					HTTP_STATUS.OK,
-					"A verification email has been sent",
-					auth
+					"A verification link has been sent to your email"
 				);
 			}
 		} catch (error) {
-			console.log(error);
 			return sendResponse(
 				res,
 				HTTP_STATUS.INTERNAL_SERVER_ERROR,
@@ -310,6 +313,29 @@ class AuthController {
 
 	async verifyEmail(req, res) {
 		try {
+			const allowedProperties = ["token", "id"];
+			const unexpectedProps = Object.keys(req.body).filter(
+				(key) => !allowedProperties.includes(key)
+			);
+			if (unexpectedProps.length > 0) {
+				return sendResponse(
+					res,
+					HTTP_STATUS.UNPROCESSABLE_ENTITY,
+					"Failed to verify email",
+					`Unexpected properties: ${unexpectedProps.join(", ")}`
+				);
+			}
+
+			const validation = validationResult(req).array();
+			if (validation.length > 0) {
+				return sendResponse(
+					res,
+					HTTP_STATUS.UNPROCESSABLE_ENTITY,
+					"Failed to verify email",
+					validation
+				);
+			}
+
 			const { token, id } = req.body;
 
 			const auth = await authModel.findById({
@@ -317,23 +343,36 @@ class AuthController {
 			});
 
 			if (!auth) {
-				return sendResponse(res, HTTP_STATUS.NOT_FOUND, "Invalid request");
+				return sendResponse(
+					res,
+					HTTP_STATUS.NOT_FOUND,
+					"Failed to verify email"
+				);
 			}
 
 			if (auth.emailVerificationValidUntil < Date.now()) {
-				return sendResponse(res, HTTP_STATUS.GONE, "Expired request");
+				return sendResponse(
+					res,
+					HTTP_STATUS.GONE,
+					"Request has been expired. Please try again later."
+				);
 			}
 
 			if (
 				auth.emailVerificationToken !== token ||
 				auth.verificationEmailSent === 0
 			) {
-				return sendResponse(res, HTTP_STATUS.UNAUTHORIZED, "Invalid request");
+				return sendResponse(
+					res,
+					HTTP_STATUS.UNAUTHORIZED,
+					"Failed to verify email"
+				);
 			}
 
-			const result = await authModel.findByIdAndUpdate(
+			const updatedAuth = await authModel.findByIdAndUpdate(
 				{ _id: id },
 				{
+					isVerified: true,
 					verificationEmailSent: 0,
 					emailVerificationValidUntil: null,
 					emailVerificationToken: null,
@@ -341,8 +380,13 @@ class AuthController {
 				{ new: true }
 			);
 
-			if (result.isModified) {
-				return sendResponse(res, HTTP_STATUS.OK, "Email has been verified");
+			if (updatedAuth.isModified) {
+				return sendResponse(
+					res,
+					HTTP_STATUS.OK,
+					"Email verification successful",
+					updatedAuth
+				);
 			}
 		} catch (error) {
 			console.log(error);
@@ -387,7 +431,7 @@ class AuthController {
 				.populate("learnerReference", "-createdAt -updatedAt -__v ")
 				.populate("instructorReference", "-createdAt -updatedAt -__v ")
 				.populate("adminReference", "-createdAt -updatedAt -__v ")
-				.select("-_id -email -createdAt -updatedAt -__v");
+				.select("-email -createdAt -updatedAt -__v");
 
 			if (!auth) {
 				return sendResponse(
@@ -406,7 +450,9 @@ class AuthController {
 				);
 			}
 
-			const emailVerificationToken = crypto.randomBytes(32).toString("hex");
+			const emailVerificationToken = crypto
+				.randomBytes(32)
+				.toString("hex");
 			const emailVerificationURL = path.join(
 				process.env.FRONTEND_URL,
 				"reset-password",
@@ -425,19 +471,23 @@ class AuthController {
 				}
 			);
 
-			const result = await transporter.sendMail({
+			const updatedAuth = await transporter.sendMail({
 				from: "skillbase@system.com",
 				to: `${name} ${email}`,
 				subject: "Forgot password?",
 				html: htmlBody,
 			});
 
-			if (result.messageId) {
+			if (updatedAuth.messageId) {
 				auth.forgotEmailSent += 1;
 				auth.resetPasswordToken = emailVerificationToken;
 				auth.resetPasswordValidUntil = Date.now() + 60 * 60 * 1000;
 				await auth.save();
-				return sendResponse(res, HTTP_STATUS.OK, "Reset password email sent");
+				return sendResponse(
+					res,
+					HTTP_STATUS.OK,
+					"Reset password email sent"
+				);
 			}
 
 			return sendResponse(
@@ -464,15 +514,26 @@ class AuthController {
 			});
 
 			if (!auth) {
-				return sendResponse(res, HTTP_STATUS.NOT_FOUND, "Invalid request");
+				return sendResponse(
+					res,
+					HTTP_STATUS.NOT_FOUND,
+					"Invalid request"
+				);
 			}
 
 			if (auth.resetPasswordValidUntil < Date.now()) {
 				return sendResponse(res, HTTP_STATUS.GONE, "Expired request");
 			}
 
-			if (auth.resetPasswordToken !== token || auth.forgotEmailSent === 0) {
-				return sendResponse(res, HTTP_STATUS.UNAUTHORIZED, "Invalid request");
+			if (
+				auth.resetPasswordToken !== token ||
+				auth.forgotEmailSent === 0
+			) {
+				return sendResponse(
+					res,
+					HTTP_STATUS.UNAUTHORIZED,
+					"Invalid request"
+				);
 			}
 
 			if (newPassword !== confirmPassword) {
@@ -491,11 +552,13 @@ class AuthController {
 				);
 			}
 
-			const hashedPassword = await bcrypt.hash(newPassword, 10).then((hash) => {
-				return hash;
-			});
+			const hashedPassword = await bcrypt
+				.hash(newPassword, 10)
+				.then((hash) => {
+					return hash;
+				});
 
-			const result = await authModel.findByIdAndUpdate(
+			const updatedAuth = await authModel.findByIdAndUpdate(
 				{ _id: id },
 				{
 					password: hashedPassword,
@@ -506,7 +569,7 @@ class AuthController {
 				{ new: true }
 			);
 
-			if (result.isModified) {
+			if (updatedAuth.isModified) {
 				return sendResponse(
 					res,
 					HTTP_STATUS.OK,
