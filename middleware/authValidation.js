@@ -38,6 +38,12 @@ const authValidator = {
 			.withMessage(
 				"Password must be at least 8 characters long, including lowercase and uppercase letters, symbols and numbers"
 			),
+		body("role")
+			.exists()
+			.withMessage("Role is required")
+			.bail()
+			.isIn(["admin", "learner", "instructor"])
+			.withMessage("Invalid request"),
 	],
 
 	signin: [
@@ -62,6 +68,23 @@ const authValidator = {
 				minNumbers: 1,
 			})
 			.withMessage("Incorrect email or password"),
+	],
+
+	emailVerification: [
+		body("token")
+			.exists()
+			.withMessage("Invalid request")
+			.bail()
+			.isString()
+			.withMessage("Invalid request")
+			.bail()
+			.trim()
+			.notEmpty()
+			.withMessage("Invalid request")
+			.bail()
+			.isLength({ max: 255 })
+			.withMessage("Character limit exceeded"),
+		body,
 	],
 
 	forgotPassword: [

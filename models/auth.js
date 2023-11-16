@@ -27,12 +27,22 @@ const authSchema = new mongoose.Schema(
 		},
 		role: {
 			type: String,
-			default: "learner",
+			required: [true, "Role is required"],
 		},
 		isVerified: {
 			type: Boolean,
 			required: [true, "IsVerified is required"],
 			default: false,
+		},
+		emailVerificationToken: {
+			type: String || null,
+		},
+		emailVerificationValidUntil: {
+			type: Date || null,
+		},
+		verificationEmailSent: {
+			type: Number,
+			default: 0,
 		},
 		signInFailed: {
 			type: Number,
