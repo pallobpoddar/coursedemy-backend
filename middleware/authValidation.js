@@ -84,7 +84,12 @@ const authValidator = {
 			.bail()
 			.isLength({ max: 255 })
 			.withMessage("Character limit exceeded"),
-		body,
+		body("id")
+			.exists()
+			.withMessage("Id is required")
+			.bail()
+			.isMongoId()
+			.withMessage("Invalid MongoDB Id"),
 	],
 
 	forgotPassword: [
