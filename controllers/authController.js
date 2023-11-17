@@ -69,11 +69,9 @@ class AuthController {
 			delete filteredInfo.updatedAt;
 			delete filteredInfo.__v;
 
-			const hashedPassword = await bcrypt
-				.hash(password, 10)
-				.then((hash) => {
-					return hash;
-				});
+			const hashedPassword = await bcrypt.hash(password, 10).then((hash) => {
+				return hash;
+			});
 
 			const referenceProperty = `${role}Reference`;
 
@@ -110,7 +108,7 @@ class AuthController {
 				return sendResponse(
 					res,
 					HTTP_STATUS.UNPROCESSABLE_ENTITY,
-					"Failed to sign in",
+					"Incorrect email or password",
 					`Unexpected properties: ${unexpectedProps.join(", ")}`
 				);
 			}
@@ -120,7 +118,7 @@ class AuthController {
 				return sendResponse(
 					res,
 					HTTP_STATUS.UNPROCESSABLE_ENTITY,
-					"Failed to sign in",
+					"Incorrect email or password",
 					validation
 				);
 			}
@@ -138,7 +136,7 @@ class AuthController {
 				return sendResponse(
 					res,
 					HTTP_STATUS.UNAUTHORIZED,
-					"Email is not registered",
+					"Incorrect email or password",
 					"Unauthorized"
 				);
 			}
@@ -153,15 +151,13 @@ class AuthController {
 					return sendResponse(
 						res,
 						HTTP_STATUS.UNAUTHORIZED,
-						"Invalid credentials",
+						"Incorrect email or password",
 						"Unauthorized"
 					);
 				}
 
 				const blockedDuration = 60 * 60 * 1000;
-				auth.signInBlockedUntil = new Date(
-					Date.now() + blockedDuration
-				);
+				auth.signInBlockedUntil = new Date(Date.now() + blockedDuration);
 				await auth.save();
 				return sendResponse(
 					res,
@@ -195,13 +191,9 @@ class AuthController {
 			delete responseAuth.signInFailed;
 			delete responseAuth.signInBlockedUntil;
 
-			const jwt = jsonwebtoken.sign(
-				responseAuth,
-				process.env.SECRET_KEY,
-				{
-					expiresIn: "1h",
-				}
-			);
+			const jwt = jsonwebtoken.sign(responseAuth, process.env.SECRET_KEY, {
+				expiresIn: "1h",
+			});
 
 			responseAuth.token = jwt;
 
@@ -248,7 +240,12 @@ class AuthController {
 
 			const { email } = req.body;
 
-			const auth = await authModel.findOne({ email: email });
+			const auth = await authModel
+				.findOne({ email: email })
+				.populate("learnerReference", "-createdAt -updatedAt -__v ")
+				.populate("instructorReference", "-createdAt -updatedAt -__v ")
+				.populate("adminReference", "-createdAt -updatedAt -__v ")
+				.select("-email -forgotEmailSent -createdAt -updatedAt -__v");
 
 			if (!auth) {
 				return sendResponse(
@@ -259,9 +256,7 @@ class AuthController {
 				);
 			}
 
-			const emailVerificationToken = crypto
-				.randomBytes(32)
-				.toString("hex");
+			const emailVerificationToken = crypto.randomBytes(32).toString("hex");
 
 			const emailVerificationURL = path.join(
 				process.env.FRONTEND_URL,
@@ -354,7 +349,7 @@ class AuthController {
 				return sendResponse(
 					res,
 					HTTP_STATUS.GONE,
-					"Request has been expired. Please try again later."
+					"Request has been expired. Please try again later"
 				);
 			}
 
@@ -389,7 +384,6 @@ class AuthController {
 				);
 			}
 		} catch (error) {
-			console.log(error);
 			return sendResponse(
 				res,
 				HTTP_STATUS.INTERNAL_SERVER_ERROR,
@@ -409,7 +403,7 @@ class AuthController {
 				return sendResponse(
 					res,
 					HTTP_STATUS.UNPROCESSABLE_ENTITY,
-					"Failed to reset password",
+					"Failed to send password reset email",
 					`Unexpected properties: ${unexpectedProps.join(", ")}`
 				);
 			}
@@ -419,7 +413,7 @@ class AuthController {
 				return sendResponse(
 					res,
 					HTTP_STATUS.UNPROCESSABLE_ENTITY,
-					"Failed to reset password",
+					validation[0].msg,
 					validation
 				);
 			}
@@ -446,17 +440,15 @@ class AuthController {
 				return sendResponse(
 					res,
 					HTTP_STATUS.FORBIDDEN,
-					"Something went wrong. Please try again later"
+					"Too many requests. Please try again later"
 				);
 			}
 
-			const emailVerificationToken = crypto
-				.randomBytes(32)
-				.toString("hex");
-			const emailVerificationURL = path.join(
+			const resetPasswordToken = crypto.randomBytes(32).toString("hex");
+			const resetPasswordURL = path.join(
 				process.env.FRONTEND_URL,
 				"reset-password",
-				emailVerificationToken,
+				resetPasswordToken,
 				auth._id.toString()
 			);
 
@@ -467,26 +459,26 @@ class AuthController {
 				path.join(__dirname, "..", "views", "forgotPasswordEmail.ejs"),
 				{
 					name: name,
-					emailVerificationURL: emailVerificationURL,
+					resetPasswordURL: resetPasswordURL,
 				}
 			);
 
 			const updatedAuth = await transporter.sendMail({
 				from: "skillbase@system.com",
 				to: `${name} ${email}`,
-				subject: "Forgot password?",
+				subject: "Skillbase - Reset Password",
 				html: htmlBody,
 			});
 
 			if (updatedAuth.messageId) {
 				auth.forgotEmailSent += 1;
-				auth.resetPasswordToken = emailVerificationToken;
+				auth.resetPasswordToken = resetPasswordToken;
 				auth.resetPasswordValidUntil = Date.now() + 60 * 60 * 1000;
 				await auth.save();
 				return sendResponse(
 					res,
 					HTTP_STATUS.OK,
-					"Reset password email sent"
+					"A password reset link has been sent to your email"
 				);
 			}
 
@@ -507,36 +499,42 @@ class AuthController {
 
 	async resetPassword(req, res) {
 		try {
-			const { token, id, newPassword, confirmPassword } = req.body;
+			const { token, id, password, confirmPassword } = req.body;
 
-			const auth = await authModel.findById({
-				_id: id,
-			});
+			const auth = await authModel
+				.findById({
+					_id: id,
+				})
+				.populate("learnerReference", "-createdAt -updatedAt -__v ")
+				.populate("instructorReference", "-createdAt -updatedAt -__v ")
+				.populate("adminReference", "-createdAt -updatedAt -__v ")
+				.select("-email -createdAt -updatedAt -__v");
 
 			if (!auth) {
 				return sendResponse(
 					res,
 					HTTP_STATUS.NOT_FOUND,
-					"Invalid request"
+					"Failed to reset password"
 				);
 			}
 
 			if (auth.resetPasswordValidUntil < Date.now()) {
-				return sendResponse(res, HTTP_STATUS.GONE, "Expired request");
-			}
-
-			if (
-				auth.resetPasswordToken !== token ||
-				auth.forgotEmailSent === 0
-			) {
 				return sendResponse(
 					res,
-					HTTP_STATUS.UNAUTHORIZED,
-					"Invalid request"
+					HTTP_STATUS.GONE,
+					"Request has been expired. Please try again later"
 				);
 			}
 
-			if (newPassword !== confirmPassword) {
+			if (auth.resetPasswordToken !== token || auth.forgotEmailSent === 0) {
+				return sendResponse(
+					res,
+					HTTP_STATUS.UNAUTHORIZED,
+					"Failed to reset password"
+				);
+			}
+
+			if (password !== confirmPassword) {
 				return sendResponse(
 					res,
 					HTTP_STATUS.NOT_FOUND,
@@ -544,7 +542,7 @@ class AuthController {
 				);
 			}
 
-			if (await bcrypt.compare(newPassword, auth.password)) {
+			if (await bcrypt.compare(password, auth.password)) {
 				return sendResponse(
 					res,
 					HTTP_STATUS.NOT_FOUND,
@@ -552,11 +550,9 @@ class AuthController {
 				);
 			}
 
-			const hashedPassword = await bcrypt
-				.hash(newPassword, 10)
-				.then((hash) => {
-					return hash;
-				});
+			const hashedPassword = await bcrypt.hash(password, 10).then((hash) => {
+				return hash;
+			});
 
 			const updatedAuth = await authModel.findByIdAndUpdate(
 				{ _id: id },
@@ -573,10 +569,12 @@ class AuthController {
 				return sendResponse(
 					res,
 					HTTP_STATUS.OK,
-					"Successfully updated password"
+					"Successfully reset password",
+					updatedAuth
 				);
 			}
 		} catch (error) {
+			console.log(error);
 			return sendResponse(
 				res,
 				HTTP_STATUS.INTERNAL_SERVER_ERROR,
