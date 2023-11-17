@@ -21,10 +21,14 @@ authRoutes.post(
 	authController.verifyEmail
 );
 authRoutes.post(
-	"/forgot-password-email",
+	"/forgot-password",
 	authValidator.forgotPassword,
 	authController.sendForgotPasswordEmail
 );
-authRoutes.post("/reset-password", authController.resetPassword);
+authRoutes.post(
+	"/reset-password",
+	authValidator.resetPassword,
+	authController.resetPassword
+);
 
 module.exports = authRoutes;
