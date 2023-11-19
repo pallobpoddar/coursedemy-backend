@@ -69,9 +69,11 @@ class AuthController {
 			delete filteredInfo.updatedAt;
 			delete filteredInfo.__v;
 
-			const hashedPassword = await bcrypt.hash(password, 10).then((hash) => {
-				return hash;
-			});
+			const hashedPassword = await bcrypt
+				.hash(password, 10)
+				.then((hash) => {
+					return hash;
+				});
 
 			const referenceProperty = `${role}Reference`;
 
@@ -130,7 +132,7 @@ class AuthController {
 				.populate("learnerReference", "-createdAt -updatedAt -__v ")
 				.populate("instructorReference", "-createdAt -updatedAt -__v ")
 				.populate("adminReference", "-createdAt -updatedAt -__v ")
-				.select("-email -forgotEmailSent -createdAt -updatedAt -__v");
+				.select("-email -createdAt -updatedAt -__v");
 
 			if (!auth) {
 				return sendResponse(
@@ -157,7 +159,9 @@ class AuthController {
 				}
 
 				const blockedDuration = 60 * 60 * 1000;
-				auth.signInBlockedUntil = new Date(Date.now() + blockedDuration);
+				auth.signInBlockedUntil = new Date(
+					Date.now() + blockedDuration
+				);
 				await auth.save();
 				return sendResponse(
 					res,
@@ -188,12 +192,23 @@ class AuthController {
 			const responseAuth = auth.toObject();
 			delete responseAuth.updatedAt;
 			delete responseAuth.password;
+			delete responseAuth.emailVerificationToken;
+			delete responseAuth.emailVerificationValidUntil;
+			delete responseAuth.verificationEmailSent;
 			delete responseAuth.signInFailed;
 			delete responseAuth.signInBlockedUntil;
+			delete responseAuth.forgotEmailSent;
+			delete responseAuth.forgotEmailBlockedUntil;
+			delete responseAuth.resetPasswordToken;
+			delete responseAuth.resetPasswordValidUntil;
 
-			const jwt = jsonwebtoken.sign(responseAuth, process.env.SECRET_KEY, {
-				expiresIn: "1h",
-			});
+			const jwt = jsonwebtoken.sign(
+				responseAuth,
+				process.env.SECRET_KEY,
+				{
+					expiresIn: "8h",
+				}
+			);
 
 			responseAuth.token = jwt;
 
@@ -245,7 +260,7 @@ class AuthController {
 				.populate("learnerReference", "-createdAt -updatedAt -__v ")
 				.populate("instructorReference", "-createdAt -updatedAt -__v ")
 				.populate("adminReference", "-createdAt -updatedAt -__v ")
-				.select("-email -forgotEmailSent -createdAt -updatedAt -__v");
+				.select("-email -createdAt -updatedAt -__v");
 
 			if (!auth) {
 				return sendResponse(
@@ -256,11 +271,13 @@ class AuthController {
 				);
 			}
 
-			const emailVerificationToken = crypto.randomBytes(32).toString("hex");
+			const emailVerificationToken = crypto
+				.randomBytes(32)
+				.toString("hex");
 
 			const emailVerificationURL = path.join(
 				process.env.FRONTEND_URL,
-				auth.role,
+				"user",
 				"verify-email",
 				emailVerificationToken,
 				auth._id.toString()
@@ -279,9 +296,9 @@ class AuthController {
 			);
 
 			const updatedAuth = await transporter.sendMail({
-				from: "skillbase@system.com",
+				from: "coursedemy@system.com",
 				to: `${name} ${email}`,
-				subject: "Confirm your email at Skillbase",
+				subject: "Confirm your email at coursedemy",
 				html: htmlBody,
 			});
 
@@ -333,9 +350,14 @@ class AuthController {
 
 			const { token, id } = req.body;
 
-			const auth = await authModel.findById({
-				_id: id,
-			});
+			const auth = await authModel
+				.findById({
+					_id: id,
+				})
+				.populate("learnerReference", "-createdAt -updatedAt -__v ")
+				.populate("instructorReference", "-createdAt -updatedAt -__v ")
+				.populate("adminReference", "-createdAt -updatedAt -__v ")
+				.select("-email -createdAt -updatedAt -__v");
 
 			if (!auth) {
 				return sendResponse(
@@ -364,25 +386,41 @@ class AuthController {
 				);
 			}
 
-			const updatedAuth = await authModel.findByIdAndUpdate(
-				{ _id: id },
+			auth.isVerified = true;
+			auth.verificationEmailSent = 0;
+			auth.emailVerificationValidUntil = null;
+			auth.emailVerificationToken = null;
+			await auth.save();
+
+			const responseAuth = auth.toObject();
+			delete responseAuth.updatedAt;
+			delete responseAuth.password;
+			delete responseAuth.emailVerificationToken;
+			delete responseAuth.emailVerificationValidUntil;
+			delete responseAuth.verificationEmailSent;
+			delete responseAuth.signInFailed;
+			delete responseAuth.signInBlockedUntil;
+			delete responseAuth.forgotEmailSent;
+			delete responseAuth.forgotEmailBlockedUntil;
+			delete responseAuth.resetPasswordToken;
+			delete responseAuth.resetPasswordValidUntil;
+
+			const jwt = jsonwebtoken.sign(
+				responseAuth,
+				process.env.SECRET_KEY,
 				{
-					isVerified: true,
-					verificationEmailSent: 0,
-					emailVerificationValidUntil: null,
-					emailVerificationToken: null,
-				},
-				{ new: true }
+					expiresIn: "8h",
+				}
 			);
 
-			if (updatedAuth.isModified) {
-				return sendResponse(
-					res,
-					HTTP_STATUS.OK,
-					"Email verification successful",
-					updatedAuth
-				);
-			}
+			responseAuth.token = jwt;
+
+			return sendResponse(
+				res,
+				HTTP_STATUS.OK,
+				"Email verification successful",
+				responseAuth
+			);
 		} catch (error) {
 			return sendResponse(
 				res,
@@ -464,9 +502,9 @@ class AuthController {
 			);
 
 			const updatedAuth = await transporter.sendMail({
-				from: "skillbase@system.com",
+				from: "coursedemy@system.com",
 				to: `${name} ${email}`,
-				subject: "Skillbase - Reset Password",
+				subject: "Coursedemy - Reset Password",
 				html: htmlBody,
 			});
 
@@ -499,6 +537,33 @@ class AuthController {
 
 	async resetPassword(req, res) {
 		try {
+			const allowedProperties = [
+				"token",
+				"id",
+				"password",
+				"confirmPassword",
+			];
+			const unexpectedProps = Object.keys(req.body).filter(
+				(key) => !allowedProperties.includes(key)
+			);
+			if (unexpectedProps.length > 0) {
+				return sendResponse(
+					res,
+					HTTP_STATUS.UNPROCESSABLE_ENTITY,
+					"Failed to reset password",
+					`Unexpected properties: ${unexpectedProps.join(", ")}`
+				);
+			}
+
+			const validation = validationResult(req).array();
+			if (validation.length > 0) {
+				return sendResponse(
+					res,
+					HTTP_STATUS.UNPROCESSABLE_ENTITY,
+					validation[0].msg,
+					validation
+				);
+			}
 			const { token, id, password, confirmPassword } = req.body;
 
 			const auth = await authModel
@@ -526,7 +591,10 @@ class AuthController {
 				);
 			}
 
-			if (auth.resetPasswordToken !== token || auth.forgotEmailSent === 0) {
+			if (
+				auth.resetPasswordToken !== token ||
+				auth.forgotEmailSent === 0
+			) {
 				return sendResponse(
 					res,
 					HTTP_STATUS.UNAUTHORIZED,
@@ -550,31 +618,48 @@ class AuthController {
 				);
 			}
 
-			const hashedPassword = await bcrypt.hash(password, 10).then((hash) => {
-				return hash;
-			});
+			const hashedPassword = await bcrypt
+				.hash(password, 10)
+				.then((hash) => {
+					return hash;
+				});
 
-			const updatedAuth = await authModel.findByIdAndUpdate(
-				{ _id: id },
+			auth.password = hashedPassword;
+			auth.forgotEmailSent = 0;
+			auth.resetPasswordValidUntil = null;
+			auth.resetPasswordToken = null;
+			await auth.save();
+
+			const responseAuth = auth.toObject();
+			delete responseAuth.updatedAt;
+			delete responseAuth.password;
+			delete responseAuth.emailVerificationToken;
+			delete responseAuth.emailVerificationValidUntil;
+			delete responseAuth.verificationEmailSent;
+			delete responseAuth.signInFailed;
+			delete responseAuth.signInBlockedUntil;
+			delete responseAuth.forgotEmailSent;
+			delete responseAuth.forgotEmailBlockedUntil;
+			delete responseAuth.resetPasswordToken;
+			delete responseAuth.resetPasswordValidUntil;
+
+			const jwt = jsonwebtoken.sign(
+				responseAuth,
+				process.env.SECRET_KEY,
 				{
-					password: hashedPassword,
-					forgotEmailSent: 0,
-					resetPasswordValidUntil: null,
-					resetPasswordToken: null,
-				},
-				{ new: true }
+					expiresIn: "8h",
+				}
 			);
 
-			if (updatedAuth.isModified) {
-				return sendResponse(
-					res,
-					HTTP_STATUS.OK,
-					"Successfully reset password",
-					updatedAuth
-				);
-			}
+			responseAuth.token = jwt;
+
+			return sendResponse(
+				res,
+				HTTP_STATUS.OK,
+				"Successfully reset password",
+				responseAuth
+			);
 		} catch (error) {
-			console.log(error);
 			return sendResponse(
 				res,
 				HTTP_STATUS.INTERNAL_SERVER_ERROR,

@@ -135,7 +135,9 @@ const authValidator = {
 				minSymbols: 1,
 				minNumbers: 1,
 			})
-			.withMessage("Incorrect email or password"),
+			.withMessage(
+				"Password must be at least 8 characters long, including lowercase and uppercase letters, symbols and numbers"
+			),
 		body("confirmPassword")
 			.exists()
 			.withMessage("Confirm password is required")
