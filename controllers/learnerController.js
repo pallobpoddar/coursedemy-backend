@@ -4,7 +4,7 @@ const learnerModel = require("../models/learner");
 const sendResponse = require("../utils/commonResponse");
 const HTTP_STATUS = require("../constants/statusCodes");
 
-class UserController {
+class LearnerController {
 	async getAll(req, res) {
 		try {
 			const learners = await learnerModel
@@ -152,4 +152,4 @@ class UserController {
 	}
 }
 
-module.exports = new UserController();
+module.exports = new LearnerController();

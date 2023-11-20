@@ -1,13 +1,21 @@
 const express = require("express");
 const instructorRoutes = express();
 const instructorController = require("../controllers/instructorController");
-const instructorValidator = require("../middleware/userValidation");
 const {
 	isAuthenticated,
 	isAdmin,
 	isInstructorOrAdmin,
+	isLearnerOrAdmin,
 } = require("../middleware/tokenValidation");
+const userValidator = require("../middleware/userValidation");
 
+instructorRoutes.post(
+	"/create-instructor-profile",
+	isAuthenticated,
+	isLearnerOrAdmin,
+	userValidator.userCreate,
+	instructorController.create
+);
 instructorRoutes.get(
 	"/all",
 	isAuthenticated,
@@ -18,14 +26,14 @@ instructorRoutes.patch(
 	"/update-one-by-id/:id",
 	isAuthenticated,
 	isInstructorOrAdmin,
-	instructorValidator.userUpdate,
+	userValidator.userUpdate,
 	instructorController.updateOneByID
 );
 instructorRoutes.delete(
 	"/delete-one-by-id/:id",
 	isAuthenticated,
 	isInstructorOrAdmin,
-	instructorValidator.userDelete,
+	userValidator.userDelete,
 	instructorController.deleteOneByID
 );
 
