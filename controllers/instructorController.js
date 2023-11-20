@@ -4,7 +4,91 @@ const instructorModel = require("../models/instructor");
 const sendResponse = require("../utils/commonResponse");
 const HTTP_STATUS = require("../constants/statusCodes");
 
-class UserController {
+class InstructorController {
+	async create(req, res) {
+		try {
+			const allowedProperties = ["name", "email"];
+			const unexpectedProps = Object.keys(req.body).filter(
+				(key) => !allowedProperties.includes(key)
+			);
+			if (unexpectedProps.length > 0) {
+				return sendResponse(
+					res,
+					HTTP_STATUS.UNPROCESSABLE_ENTITY,
+					"Failed to create an instructor profile",
+					`Unexpected properties: ${unexpectedProps.join(", ")}`
+				);
+			}
+
+			const validation = validationResult(req).array();
+			if (validation.length > 0) {
+				return sendResponse(
+					res,
+					HTTP_STATUS.UNPROCESSABLE_ENTITY,
+					validation[0].msg,
+					validation
+				);
+			}
+
+			const { name, email } = req.body;
+
+			const auth = await authModel.findOne({ email: email });
+			if (!auth) {
+				return sendResponse(
+					res,
+					HTTP_STATUS.NOT_FOUND,
+					"Email is not registered",
+					"Not found"
+				);
+			}
+
+			const isInstructorRegistered = await instructorModel.findOne({
+				email: email,
+			});
+			if (isInstructorRegistered) {
+				return sendResponse(
+					res,
+					HTTP_STATUS.NOT_FOUND,
+					"Instructor is already registered",
+					"Not found"
+				);
+			}
+
+			const instructor = await instructorModel.create({
+				email: email,
+				name: name,
+			});
+
+			auth.instructorReference = instructor._id;
+			auth.role = "instructor";
+
+			await auth.save();
+			const filteredInfo = await authModel
+				.findOne({ email: email })
+				.populate("learnerReference", "-createdAt -updatedAt -__v ")
+				.populate("instructorReference", "-createdAt -updatedAt -__v ")
+				.populate("adminReference", "-createdAt -updatedAt -__v ")
+				.select(
+					"-email -password -signInFailed -forgotEmailSent -verificationEmailSent -signInBlockedUntil -resetPasswordToken -emailVerificationToken -emailVerificationValidUntil -createdAt -updatedAt -__v"
+				);
+
+			return sendResponse(
+				res,
+				HTTP_STATUS.OK,
+				"Successfully created an instructor profile",
+				filteredInfo
+			);
+		} catch (error) {
+			console.log(error);
+			return sendResponse(
+				res,
+				HTTP_STATUS.INTERNAL_SERVER_ERROR,
+				"Internal server error",
+				"Server error"
+			);
+		}
+	}
+
 	async getAll(req, res) {
 		try {
 			const instructors = await instructorModel
@@ -152,4 +236,4 @@ class UserController {
 	}
 }
 
-module.exports = new UserController();
+module.exports = new InstructorController();

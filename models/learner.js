@@ -6,12 +6,12 @@ const learnerSchema = new mongoose.Schema(
 			type: String,
 			required: [true, "Email is required"],
 			unique: [true, "Email already exists"],
-			maxLength: [64, "Invalid email"],
+			maxLength: [320, "Invalid email"],
 		},
 		name: {
 			type: String,
 			required: [true, "Name is required"],
-			maxLength: [30, "Character limit exceeded"],
+			maxLength: [255, "Character limit exceeded"],
 		},
 		image: {
 			type: String,
