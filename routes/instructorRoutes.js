@@ -11,8 +11,6 @@ const userValidator = require("../middleware/userValidation");
 
 instructorRoutes.post(
 	"/create-instructor-profile",
-	isAuthenticated,
-	isLearnerOrAdmin,
 	userValidator.userCreate,
 	instructorController.create
 );

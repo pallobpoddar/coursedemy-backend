@@ -60,9 +60,8 @@ class InstructorController {
 			});
 
 			auth.instructorReference = instructor._id;
-			auth.role = "instructor";
-
 			await auth.save();
+
 			const filteredInfo = await authModel
 				.findOne({ email: email })
 				.populate("learnerReference", "-createdAt -updatedAt -__v ")
@@ -96,7 +95,11 @@ class InstructorController {
 				.select("-createdAt -updatedAt -__v");
 
 			if (instructors.length === 0) {
-				return sendResponse(res, HTTP_STATUS.OK, "No instructor is found");
+				return sendResponse(
+					res,
+					HTTP_STATUS.OK,
+					"No instructor is found"
+				);
 			}
 
 			return sendResponse(
@@ -215,7 +218,9 @@ class InstructorController {
 				);
 			}
 
-			const learner = await instructorModel.findByIdAndDelete({ _id: id });
+			const learner = await instructorModel.findByIdAndDelete({
+				_id: id,
+			});
 			const authInfo = await authModel.findOneAndDelete({
 				email: userInfo.email,
 			});
