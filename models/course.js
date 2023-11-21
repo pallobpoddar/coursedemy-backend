@@ -23,7 +23,6 @@ const courseSchema = new mongoose.Schema(
 		},
 		subcategoryReference: {
 			type: mongoose.Types.ObjectId,
-			required: [true, "Subcategory is required"],
 		},
 		thumbnail: {
 			type: String,
