@@ -18,13 +18,19 @@ courseRoutes.post(
 	courseController.create
 );
 
-courseRoutes.patch(
-	"/update-one-by-id/:id",
-	isAuthenticated,
+courseRoutes.get(
+	"/get-all-by-instructor-reference",
 	isInstructorOrAdmin,
-	upload.fields([{ name: "thumbnail" }, { name: "promoVideo" }]),
-	courseValidator.update,
-	courseController.updateOneById
-);
+	courseValidator.getAllByInstructorReference,
+	courseController.getAllByInstructorReference
+),
+	courseRoutes.patch(
+		"/update-one-by-id/:id",
+		isAuthenticated,
+		isInstructorOrAdmin,
+		upload.fields([{ name: "thumbnail" }, { name: "promoVideo" }]),
+		courseValidator.update,
+		courseController.updateOneById
+	);
 
 module.exports = courseRoutes;
