@@ -27,12 +27,6 @@ const courseValidator = {
 			.bail()
 			.isMongoId()
 			.withMessage("Invalid MongoDB Id"),
-		body("subcategoryReference")
-			.exists()
-			.withMessage("Subcategory reference is required")
-			.bail()
-			.isMongoId()
-			.withMessage("Invalid MongoDB Id"),
 	],
 
 	update: [

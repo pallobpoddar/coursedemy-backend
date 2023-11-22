@@ -98,7 +98,7 @@ const isInstructorOrAdmin = (req, res, next) => {
 
 		const user = jsonwebtoken.decode(jwt);
 
-		if (user.role !== "instructor" && user.role !== "admin") {
+		if (user.instructorReference !== null && user.adminReference !== null) {
 			return sendResponse(
 				res,
 				HTTP_STATUS.UNAUTHORIZED,

@@ -13,7 +13,7 @@ const categoryValidator = {
 			.notEmpty()
 			.withMessage("Name is required")
 			.bail()
-			.isLength({ max: 50 })
+			.isLength({ max: 30 })
 			.withMessage("Character limit exceeded"),
 	],
 };

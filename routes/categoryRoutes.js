@@ -12,4 +12,6 @@ categoryRoutes.post(
 	categoryController.create
 );
 
+categoryRoutes.get("/all", isAuthenticated, categoryController.getAll);
+
 module.exports = categoryRoutes;
