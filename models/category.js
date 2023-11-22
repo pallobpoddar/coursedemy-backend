@@ -6,7 +6,7 @@ const categorySchema = new mongoose.Schema(
 			type: String,
 			required: [true, "Category is required"],
 			unique: [true, "Category already exists"],
-			maxLength: [50, "Character limit exceeded"],
+			maxLength: [30, "Character limit exceeded"],
 		},
 	},
 	{ timestamps: true }

@@ -92,7 +92,7 @@ const authValidator = {
 			.withMessage("Invalid MongoDB Id"),
 	],
 
-	forgotPassword: [
+	submitEmail: [
 		body("email")
 			.exists()
 			.withMessage("Email is required")

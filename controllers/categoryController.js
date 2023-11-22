@@ -67,6 +67,34 @@ class CategoryController {
 			);
 		}
 	}
+
+	async getAll(req, res) {
+		try {
+			const categories = await categoryModel
+				.find({})
+				.select("-createdAt -updatedAt -__v");
+			if (categories.length === 0) {
+				return sendResponse(res, HTTP_STATUS.OK, "No category has been found");
+			}
+
+			return sendResponse(
+				res,
+				HTTP_STATUS.OK,
+				"Successfully received all categories",
+				{
+					result: categories,
+					total: categories.length,
+				}
+			);
+		} catch (error) {
+			return sendResponse(
+				res,
+				HTTP_STATUS.INTERNAL_SERVER_ERROR,
+				"Internal server error",
+				"Server error"
+			);
+		}
+	}
 }
 
 module.exports = new CategoryController();

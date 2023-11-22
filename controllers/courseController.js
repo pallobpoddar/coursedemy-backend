@@ -1,18 +1,12 @@
 const { validationResult } = require("express-validator");
 const courseModel = require("../models/course");
 const categoryModel = require("../models/category");
-const subcategoryModel = require("../models/subcategory");
 const instructorModel = require("../models/instructor");
 const sendResponse = require("../utils/commonResponse");
 const HTTP_STATUS = require("../constants/statusCodes");
 const { uploadToS3 } = require("../configs/file");
 
-const allowedProperties = [
-	"instructorReference",
-	"title",
-	"categoryReference",
-	"subcategoryReference",
-];
+const allowedProperties = ["instructorReference", "title", "categoryReference"];
 
 class CourseController {
 	async create(req, res) {
@@ -34,17 +28,12 @@ class CourseController {
 				return sendResponse(
 					res,
 					HTTP_STATUS.UNPROCESSABLE_ENTITY,
-					"Failed to create the course",
+					validation[0].msg,
 					validation
 				);
 			}
 
-			const {
-				instructorReference,
-				title,
-				categoryReference,
-				subcategoryReference,
-			} = req.body;
+			const { instructorReference, title, categoryReference } = req.body;
 
 			const instructor = await instructorModel.findById({
 				_id: instructorReference,
@@ -70,23 +59,10 @@ class CourseController {
 				);
 			}
 
-			const subcategory = await subcategoryModel.findOne({
-				_id: subcategoryReference,
-			});
-			if (!subcategory) {
-				return sendResponse(
-					res,
-					HTTP_STATUS.UNAUTHORIZED,
-					"Subcategory is not registered",
-					"Unauthorized"
-				);
-			}
-
 			const course = await courseModel.create({
 				instructorReference: instructorReference,
 				title: title,
 				categoryReference: categoryReference,
-				subcategoryReference: subcategoryReference,
 			});
 
 			const filteredInfo = course.toObject();

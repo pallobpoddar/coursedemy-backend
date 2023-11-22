@@ -12,7 +12,7 @@ authRoutes.post(
 authRoutes.post("/signin", authValidator.signin, authController.signin);
 authRoutes.post(
 	"/verification-email",
-	authValidator.signup,
+	authValidator.submitEmail,
 	authController.sendVerificationEmail
 );
 authRoutes.post(
@@ -22,7 +22,7 @@ authRoutes.post(
 );
 authRoutes.post(
 	"/forgot-password",
-	authValidator.forgotPassword,
+	authValidator.submitEmail,
 	authController.sendForgotPasswordEmail
 );
 authRoutes.post(
