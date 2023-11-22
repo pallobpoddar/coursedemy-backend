@@ -29,6 +29,15 @@ const courseValidator = {
 			.withMessage("Invalid MongoDB Id"),
 	],
 
+	getAllByInstructorReference: [
+		body("instructorReference")
+			.exists()
+			.withMessage("Instructor reference is required")
+			.bail()
+			.isMongoId()
+			.withMessage("Invalid MongoDB Id"),
+	],
+
 	update: [
 		body("instructorReference")
 			.optional()

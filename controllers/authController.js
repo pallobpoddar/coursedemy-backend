@@ -69,9 +69,11 @@ class AuthController {
 			delete filteredInfo.updatedAt;
 			delete filteredInfo.__v;
 
-			const hashedPassword = await bcrypt.hash(password, 10).then((hash) => {
-				return hash;
-			});
+			const hashedPassword = await bcrypt
+				.hash(password, 10)
+				.then((hash) => {
+					return hash;
+				});
 
 			const referenceProperty = `${role}Reference`;
 
@@ -88,7 +90,6 @@ class AuthController {
 			await authModel.create(authData);
 			next();
 		} catch (error) {
-			console.log(error);
 			return sendResponse(
 				res,
 				HTTP_STATUS.INTERNAL_SERVER_ERROR,
@@ -157,7 +158,9 @@ class AuthController {
 				}
 
 				const blockedDuration = 60 * 60 * 1000;
-				auth.signInBlockedUntil = new Date(Date.now() + blockedDuration);
+				auth.signInBlockedUntil = new Date(
+					Date.now() + blockedDuration
+				);
 				await auth.save();
 				return sendResponse(
 					res,
@@ -198,9 +201,13 @@ class AuthController {
 			delete responseAuth.resetPasswordToken;
 			delete responseAuth.resetPasswordValidUntil;
 
-			const jwt = jsonwebtoken.sign(responseAuth, process.env.SECRET_KEY, {
-				expiresIn: "1h",
-			});
+			const jwt = jsonwebtoken.sign(
+				responseAuth,
+				process.env.SECRET_KEY,
+				{
+					expiresIn: "8h",
+				}
+			);
 
 			responseAuth.token = jwt;
 
@@ -263,7 +270,9 @@ class AuthController {
 				);
 			}
 
-			const emailVerificationToken = crypto.randomBytes(32).toString("hex");
+			const emailVerificationToken = crypto
+				.randomBytes(32)
+				.toString("hex");
 
 			const emailVerificationURL = path.join(
 				process.env.FRONTEND_URL,
@@ -395,9 +404,13 @@ class AuthController {
 			delete responseAuth.resetPasswordToken;
 			delete responseAuth.resetPasswordValidUntil;
 
-			const jwt = jsonwebtoken.sign(responseAuth, process.env.SECRET_KEY, {
-				expiresIn: "8h",
-			});
+			const jwt = jsonwebtoken.sign(
+				responseAuth,
+				process.env.SECRET_KEY,
+				{
+					expiresIn: "8h",
+				}
+			);
 
 			responseAuth.token = jwt;
 
@@ -523,7 +536,12 @@ class AuthController {
 
 	async resetPassword(req, res) {
 		try {
-			const allowedProperties = ["token", "id", "password", "confirmPassword"];
+			const allowedProperties = [
+				"token",
+				"id",
+				"password",
+				"confirmPassword",
+			];
 			const unexpectedProps = Object.keys(req.body).filter(
 				(key) => !allowedProperties.includes(key)
 			);
@@ -572,7 +590,10 @@ class AuthController {
 				);
 			}
 
-			if (auth.resetPasswordToken !== token || auth.forgotEmailSent === 0) {
+			if (
+				auth.resetPasswordToken !== token ||
+				auth.forgotEmailSent === 0
+			) {
 				return sendResponse(
 					res,
 					HTTP_STATUS.UNAUTHORIZED,
@@ -596,9 +617,11 @@ class AuthController {
 				);
 			}
 
-			const hashedPassword = await bcrypt.hash(password, 10).then((hash) => {
-				return hash;
-			});
+			const hashedPassword = await bcrypt
+				.hash(password, 10)
+				.then((hash) => {
+					return hash;
+				});
 
 			auth.password = hashedPassword;
 			auth.forgotEmailSent = 0;
@@ -619,9 +642,13 @@ class AuthController {
 			delete responseAuth.resetPasswordToken;
 			delete responseAuth.resetPasswordValidUntil;
 
-			const jwt = jsonwebtoken.sign(responseAuth, process.env.SECRET_KEY, {
-				expiresIn: "8h",
-			});
+			const jwt = jsonwebtoken.sign(
+				responseAuth,
+				process.env.SECRET_KEY,
+				{
+					expiresIn: "8h",
+				}
+			);
 
 			responseAuth.token = jwt;
 

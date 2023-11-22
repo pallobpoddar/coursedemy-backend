@@ -6,11 +6,14 @@ const sendResponse = require("../utils/commonResponse");
 const HTTP_STATUS = require("../constants/statusCodes");
 const { uploadToS3 } = require("../configs/file");
 
-const allowedProperties = ["instructorReference", "title", "categoryReference"];
-
 class CourseController {
 	async create(req, res) {
 		try {
+			const allowedProperties = [
+				"instructorReference",
+				"title",
+				"categoryReference",
+			];
 			const unexpectedProps = Object.keys(req.body).filter(
 				(key) => !allowedProperties.includes(key)
 			);
@@ -86,8 +89,82 @@ class CourseController {
 		}
 	}
 
+	async getAllByInstructorReference(req, res) {
+		try {
+			const allowedProperties = ["instructorReference"];
+			const unexpectedProps = Object.keys(req.body).filter(
+				(key) => !allowedProperties.includes(key)
+			);
+			if (unexpectedProps.length > 0) {
+				return sendResponse(
+					res,
+					HTTP_STATUS.UNPROCESSABLE_ENTITY,
+					"Failed to create the course",
+					`Unexpected properties: ${unexpectedProps.join(", ")}`
+				);
+			}
+
+			const validation = validationResult(req).array();
+			if (validation.length > 0) {
+				return sendResponse(
+					res,
+					HTTP_STATUS.UNPROCESSABLE_ENTITY,
+					validation[0].msg,
+					validation
+				);
+			}
+
+			const { instructorReference } = req.body;
+
+			const instructor = await instructorModel.findById({
+				_id: instructorReference,
+			});
+			if (!instructor) {
+				return sendResponse(
+					res,
+					HTTP_STATUS.UNAUTHORIZED,
+					"Instructor is not registered",
+					"Unauthorized"
+				);
+			}
+
+			const courses = await courseModel
+				.find({})
+				.select("-createdAt -updatedAt -__v");
+			if (courses.length === 0) {
+				return sendResponse(
+					res,
+					HTTP_STATUS.OK,
+					"No course has been found"
+				);
+			}
+
+			return sendResponse(
+				res,
+				HTTP_STATUS.OK,
+				"Successfully received all courses",
+				{
+					result: courses,
+					total: courses.length,
+				}
+			);
+		} catch (error) {
+			return sendResponse(
+				res,
+				HTTP_STATUS.INTERNAL_SERVER_ERROR,
+				"Internal server error",
+				"Server error"
+			);
+		}
+	}
+
 	async updateOneById(req, res) {
 		try {
+			const allowedProperties = [
+				"instructorReference",
+				"title",
+				"categoryReference",
+			];
 			const unexpectedProps = Object.keys(req.body).filter(
 				(key) => !allowedProperties.includes(key)
 			);
