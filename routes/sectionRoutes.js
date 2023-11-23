@@ -16,4 +16,12 @@ sectionRoutes.post(
 	sectionController.create
 );
 
+sectionRoutes.get(
+	"/get-all-by-course-reference/:courseReference",
+	isAuthenticated,
+	isInstructorOrAdmin,
+	sectionValidator.getAllByCourseReference,
+	sectionController.getAllByCourseReference
+);
+
 module.exports = sectionRoutes;

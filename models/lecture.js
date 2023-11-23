@@ -14,7 +14,6 @@ const lectureSchema = new mongoose.Schema(
 		},
 		content: {
 			type: String,
-			required: [true, "Content is required"],
 			maxLength: [200, "Character limit exceeded"],
 		},
 		isAccessibleToUnsubsribedLearners: {

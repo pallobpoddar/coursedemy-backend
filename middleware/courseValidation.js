@@ -1,4 +1,4 @@
-const { body } = require("express-validator");
+const { body, param } = require("express-validator");
 
 const courseValidator = {
 	create: [
@@ -30,9 +30,18 @@ const courseValidator = {
 	],
 
 	getAllByInstructorReference: [
-		body("instructorReference")
+		param("instructorReference")
 			.exists()
 			.withMessage("Instructor reference is required")
+			.bail()
+			.isMongoId()
+			.withMessage("Invalid MongoDB Id"),
+	],
+
+	getOneByCourseReference: [
+		param("courseReference")
+			.exists()
+			.withMessage("Course reference is required")
 			.bail()
 			.isMongoId()
 			.withMessage("Invalid MongoDB Id"),
