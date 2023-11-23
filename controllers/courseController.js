@@ -2,6 +2,8 @@ const { validationResult } = require("express-validator");
 const courseModel = require("../models/course");
 const categoryModel = require("../models/category");
 const instructorModel = require("../models/instructor");
+const sectionModel = require("../models/section");
+const lectureModel = require("../models/lecture");
 const sendResponse = require("../utils/commonResponse");
 const HTTP_STATUS = require("../constants/statusCodes");
 const { uploadToS3 } = require("../configs/file");
@@ -68,6 +70,16 @@ class CourseController {
 				categoryReference: categoryReference,
 			});
 
+			const section = await sectionModel.create({
+				courseReference: course._id,
+				title: "Introduction",
+			});
+
+			const lecture = await lectureModel.create({
+				sectionReference: section._id,
+				title: "Introduction",
+			});
+
 			const filteredInfo = course.toObject();
 			delete filteredInfo.createdAt;
 			delete filteredInfo.updatedAt;
@@ -92,14 +104,14 @@ class CourseController {
 	async getAllByInstructorReference(req, res) {
 		try {
 			const allowedProperties = ["instructorReference"];
-			const unexpectedProps = Object.keys(req.body).filter(
+			const unexpectedProps = Object.keys(req.params).filter(
 				(key) => !allowedProperties.includes(key)
 			);
 			if (unexpectedProps.length > 0) {
 				return sendResponse(
 					res,
 					HTTP_STATUS.UNPROCESSABLE_ENTITY,
-					"Failed to create the course",
+					"Failed to receive the courses",
 					`Unexpected properties: ${unexpectedProps.join(", ")}`
 				);
 			}
@@ -114,7 +126,7 @@ class CourseController {
 				);
 			}
 
-			const { instructorReference } = req.body;
+			const { instructorReference } = req.params;
 
 			const instructor = await instructorModel.findById({
 				_id: instructorReference,
@@ -132,11 +144,7 @@ class CourseController {
 				.find({})
 				.select("-createdAt -updatedAt -__v");
 			if (courses.length === 0) {
-				return sendResponse(
-					res,
-					HTTP_STATUS.OK,
-					"No course has been found"
-				);
+				return sendResponse(res, HTTP_STATUS.OK, "No course has been found");
 			}
 
 			return sendResponse(
@@ -147,6 +155,63 @@ class CourseController {
 					result: courses,
 					total: courses.length,
 				}
+			);
+		} catch (error) {
+			return sendResponse(
+				res,
+				HTTP_STATUS.INTERNAL_SERVER_ERROR,
+				"Internal server error",
+				"Server error"
+			);
+		}
+	}
+
+	async getOneByCourseReference(req, res) {
+		try {
+			const allowedProperties = ["courseReference"];
+			const unexpectedProps = Object.keys(req.body).filter(
+				(key) => !allowedProperties.includes(key)
+			);
+			if (unexpectedProps.length > 0) {
+				return sendResponse(
+					res,
+					HTTP_STATUS.UNPROCESSABLE_ENTITY,
+					"Failed to receive the course",
+					`Unexpected properties: ${unexpectedProps.join(", ")}`
+				);
+			}
+
+			const validation = validationResult(req).array();
+			if (validation.length > 0) {
+				return sendResponse(
+					res,
+					HTTP_STATUS.UNPROCESSABLE_ENTITY,
+					validation[0].msg,
+					validation
+				);
+			}
+
+			const { courseReference } = req.params;
+
+			const course = await courseModel
+				.findById({
+					_id: courseReference,
+				})
+				.select("-email -createdAt -updatedAt -__v");
+			if (!course) {
+				return sendResponse(
+					res,
+					HTTP_STATUS.UNAUTHORIZED,
+					"Instructor is not registered",
+					"Unauthorized"
+				);
+			}
+
+			return sendResponse(
+				res,
+				HTTP_STATUS.OK,
+				"Successfully received the course",
+				course
 			);
 		} catch (error) {
 			return sendResponse(

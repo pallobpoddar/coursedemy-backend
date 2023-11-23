@@ -1,4 +1,4 @@
-const { body } = require("express-validator");
+const { body, param } = require("express-validator");
 
 const sectionValidator = {
 	create: [
@@ -21,6 +21,15 @@ const sectionValidator = {
 			.bail()
 			.isLength({ max: 100 })
 			.withMessage("Character limit exceeded"),
+	],
+
+	getAllByCourseReference: [
+		param("courseReference")
+			.exists()
+			.withMessage("Course reference is required")
+			.bail()
+			.isMongoId()
+			.withMessage("Invalid MongoDB Id"),
 	],
 };
 
