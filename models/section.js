@@ -12,6 +12,14 @@ const sectionSchema = new mongoose.Schema(
 			required: [true, "Title is required"],
 			maxLength: [100, "Character limit exceeded"],
 		},
+		lectures: {
+			type: [
+				{
+					type: mongoose.Types.ObjectId,
+					ref: "Lecture",
+				},
+			],
+		},
 	},
 	{ timestamps: true }
 );

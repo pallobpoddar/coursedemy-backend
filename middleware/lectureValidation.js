@@ -2,12 +2,6 @@ const { body } = require("express-validator");
 
 const lectureValidator = {
 	create: [
-		body("sectionReference")
-			.exists()
-			.withMessage("Section reference is required")
-			.bail()
-			.isMongoId()
-			.withMessage("Invalid MongoDB Id"),
 		body("title")
 			.exists()
 			.withMessage("Title is required")

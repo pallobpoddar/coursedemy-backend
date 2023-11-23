@@ -2,11 +2,6 @@ const mongoose = require("mongoose");
 
 const lectureSchema = new mongoose.Schema(
 	{
-		sectionReference: {
-			type: mongoose.Types.ObjectId,
-			ref: "Section",
-			required: [true, "Section reference is required"],
-		},
 		title: {
 			type: String,
 			required: [true, "Title is required"],
