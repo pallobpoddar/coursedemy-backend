@@ -111,9 +111,14 @@ class SectionController {
 
 			const sections = await sectionModel
 				.find({})
-				.select("-createdAt -updatedAt -__v");
+				.populate("lectures", "-createdAt -updatedAt -__v")
+				.select("-courseReference -createdAt -updatedAt -__v");
 			if (sections.length === 0) {
-				return sendResponse(res, HTTP_STATUS.OK, "No section has been found");
+				return sendResponse(
+					res,
+					HTTP_STATUS.OK,
+					"No section has been found"
+				);
 			}
 
 			return sendResponse(
@@ -126,6 +131,7 @@ class SectionController {
 				}
 			);
 		} catch (error) {
+			console.log(error);
 			return sendResponse(
 				res,
 				HTTP_STATUS.INTERNAL_SERVER_ERROR,

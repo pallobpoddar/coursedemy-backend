@@ -70,14 +70,14 @@ class CourseController {
 				categoryReference: categoryReference,
 			});
 
-			const section = await sectionModel.create({
-				courseReference: course._id,
+			const lecture = await lectureModel.create({
 				title: "Introduction",
 			});
 
-			const lecture = await lectureModel.create({
-				sectionReference: section._id,
+			const section = await sectionModel.create({
+				courseReference: course._id,
 				title: "Introduction",
+				lectures: lecture._id,
 			});
 
 			const filteredInfo = course.toObject();
@@ -144,7 +144,11 @@ class CourseController {
 				.find({})
 				.select("-createdAt -updatedAt -__v");
 			if (courses.length === 0) {
-				return sendResponse(res, HTTP_STATUS.OK, "No course has been found");
+				return sendResponse(
+					res,
+					HTTP_STATUS.OK,
+					"No course has been found"
+				);
 			}
 
 			return sendResponse(
