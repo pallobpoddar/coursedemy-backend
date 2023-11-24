@@ -20,4 +20,22 @@ lectureRoutes.post(
 	lectureController.create
 );
 
+lectureRoutes.patch(
+	"/update-one-by-id",
+	isAuthenticated,
+	isInstructorOrAdmin,
+	lectureValidator.updateOneById,
+	lectureController.updateOneById
+);
+
+lectureRoutes.patch(
+	"/upload-content",
+	isAuthenticated,
+	isInstructorOrAdmin,
+	upload.single("content"),
+	fileValidator.uploadFile,
+	lectureValidator.uploadContent,
+	lectureController.uploadContent
+);
+
 module.exports = lectureRoutes;

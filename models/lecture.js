@@ -13,7 +13,6 @@ const lectureSchema = new mongoose.Schema(
 		},
 		isAccessibleToUnsubsribedLearners: {
 			type: Boolean,
-			required: [true, "IsAccessibleToUnsubsribedLearners is required"],
 			default: false,
 		},
 	},
