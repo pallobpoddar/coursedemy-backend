@@ -19,7 +19,7 @@ class fileController {
 			}
 
 			if (extension === "jpg" || extension === "jpeg" || extension === "png") {
-				req.awsFolder = "images";
+				req.awsFolder = "images/course-content";
 			} else if (
 				extension === "pdf" ||
 				extension === "doc" ||
