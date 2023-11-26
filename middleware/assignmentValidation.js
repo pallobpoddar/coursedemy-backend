@@ -1,4 +1,4 @@
-const { body } = require("express-validator");
+const { body, param } = require("express-validator");
 
 const assignmentValidator = {
 	create: [
@@ -21,18 +21,15 @@ const assignmentValidator = {
 			.bail()
 			.isLength({ max: 100 })
 			.withMessage("Character limit exceeded"),
-		body("totalMarks")
+	],
+
+	getAllByCourseReference: [
+		param("courseReference")
 			.exists()
-			.withMessage("Total marks is required")
+			.withMessage("Course reference is required")
 			.bail()
-			.isNumeric()
-			.withMessage("Invalid total marks"),
-		body("passMarks")
-			.exists()
-			.withMessage("Pass marks is required")
-			.bail()
-			.isNumeric()
-			.withMessage("Invalid pass marks"),
+			.isMongoId()
+			.withMessage("Invalid MongoDB Id"),
 	],
 };
 

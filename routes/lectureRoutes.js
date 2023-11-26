@@ -14,8 +14,6 @@ lectureRoutes.post(
 	"/create",
 	isAuthenticated,
 	isInstructorOrAdmin,
-	upload.single("fileInput"),
-	fileValidator.uploadFile,
 	lectureValidator.create,
 	lectureController.create
 );
@@ -36,6 +34,14 @@ lectureRoutes.patch(
 	fileValidator.uploadFile,
 	lectureValidator.uploadContent,
 	lectureController.uploadContent
+);
+
+lectureRoutes.delete(
+	"/delete-one-by-id/:id",
+	isAuthenticated,
+	isInstructorOrAdmin,
+	lectureValidator.deleteOneById,
+	lectureController.deleteOneById
 );
 
 module.exports = lectureRoutes;

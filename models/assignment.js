@@ -17,14 +17,6 @@ const assignmentSchema = new mongoose.Schema(
 			required: [true, "Question is required"],
 			maxLength: [200, "Character limit exceeded"],
 		},
-		totalMarks: {
-			type: Number,
-			required: [true, "Total marks is required"],
-		},
-		passMarks: {
-			type: Number,
-			required: [true, "Pass marks is required"],
-		},
 	},
 	{ timestamps: true }
 );

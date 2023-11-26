@@ -1,7 +1,13 @@
-const { body } = require("express-validator");
+const { body, param } = require("express-validator");
 
 const lectureValidator = {
 	create: [
+		body("sectionReference")
+			.exists()
+			.withMessage("Section reference is required")
+			.bail()
+			.isMongoId()
+			.withMessage("Invalid MongoDB Id"),
 		body("title")
 			.exists()
 			.withMessage("Title is required")
@@ -18,9 +24,9 @@ const lectureValidator = {
 	],
 
 	updateOneById: [
-		body("lectureReference")
+		body("id")
 			.exists()
-			.withMessage("Lecture reference is required")
+			.withMessage("Lecture id is required")
 			.bail()
 			.isMongoId()
 			.withMessage("Invalid MongoDB Id"),
@@ -47,6 +53,15 @@ const lectureValidator = {
 		body("lectureReference")
 			.exists()
 			.withMessage("Lecture reference is required")
+			.bail()
+			.isMongoId()
+			.withMessage("Invalid MongoDB Id"),
+	],
+
+	deleteOneById: [
+		param("id")
+			.exists()
+			.withMessage("Lecture id is required")
 			.bail()
 			.isMongoId()
 			.withMessage("Invalid MongoDB Id"),
