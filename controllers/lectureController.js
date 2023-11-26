@@ -4,6 +4,7 @@ const lectureModel = require("../models/lecture");
 const sendResponse = require("../utils/commonResponse");
 const HTTP_STATUS = require("../constants/statusCodes");
 const { uploadToS3 } = require("../configs/file");
+const { mongo } = require("mongoose");
 
 class LectureController {
 	async create(req, res) {
@@ -45,18 +46,13 @@ class LectureController {
 				);
 			}
 
-			const params = {
-				Bucket: `pallob-inception-bucket/final-project/${req.awsFolder}`,
-				Key: req.file.originalname,
-				Body: req.file.buffer,
-			};
-			const content = await uploadToS3(params);
-
 			const lecture = await lectureModel.create({
 				sectionReference: sectionReference,
 				title: title,
-				content: content,
 			});
+
+			section.lectures.push(lecture._id);
+			await section.save();
 
 			const filteredInfo = lecture.toObject();
 			delete filteredInfo.createdAt;
@@ -82,7 +78,7 @@ class LectureController {
 	async updateOneById(req, res) {
 		try {
 			const allowedProperties = [
-				"lectureReference",
+				"id",
 				"title",
 				"isAccessibleToUnsubsribedLearners",
 			];
@@ -108,8 +104,7 @@ class LectureController {
 				);
 			}
 
-			const { lectureReference, title, isAccessibleToUnsubsribedLearners } =
-				req.body;
+			const { id, title, isAccessibleToUnsubsribedLearners } = req.body;
 
 			if (!title && !isAccessibleToUnsubsribedLearners) {
 				return sendResponse(
@@ -122,9 +117,9 @@ class LectureController {
 
 			const lecture = await lectureModel
 				.findById({
-					_id: lectureReference,
+					_id: id,
 				})
-				.select("-createdAt -updatedAt -__v");
+				.select("-createdAt -__v");
 			if (!lecture) {
 				return sendResponse(
 					res,
@@ -217,6 +212,60 @@ class LectureController {
 				HTTP_STATUS.OK,
 				"Successfully uploaded the lecture",
 				filteredInfo
+			);
+		} catch (error) {
+			return sendResponse(
+				res,
+				HTTP_STATUS.INTERNAL_SERVER_ERROR,
+				"Internal server error",
+				"Server error"
+			);
+		}
+	}
+
+	async deleteOneById(req, res) {
+		try {
+			const validation = validationResult(req).array();
+			if (validation.length > 0) {
+				return sendResponse(
+					res,
+					HTTP_STATUS.UNPROCESSABLE_ENTITY,
+					validation[0].msg,
+					validation
+				);
+			}
+
+			const { id } = req.params;
+
+			const lecture = await lectureModel.findById({
+				_id: id,
+			});
+			if (!lecture) {
+				return sendResponse(
+					res,
+					HTTP_STATUS.UNAUTHORIZED,
+					"Lecture is not registered",
+					"Unauthorized"
+				);
+			}
+
+			const section = await sectionModel.findById({
+				_id: lecture.sectionReference,
+			});
+
+			section.lectures = section.lectures.filter(
+				(lectureReference) => lectureReference != id
+			);
+			await section.save();
+
+			const deletedLecture = await lectureModel.findByIdAndDelete({
+				_id: id,
+			});
+
+			return sendResponse(
+				res,
+				HTTP_STATUS.OK,
+				"Successfully deleted the lecture"
 			);
 		} catch (error) {
 			return sendResponse(

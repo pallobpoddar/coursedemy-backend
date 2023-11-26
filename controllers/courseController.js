@@ -70,15 +70,18 @@ class CourseController {
 				categoryReference: categoryReference,
 			});
 
-			const lecture = await lectureModel.create({
-				title: "Introduction",
-			});
-
 			const section = await sectionModel.create({
 				courseReference: course._id,
 				title: "Introduction",
-				lectures: lecture._id,
 			});
+
+			const lecture = await lectureModel.create({
+				sectionReference: section._id,
+				title: "Introduction",
+			});
+
+			section.lectures.push(lecture._id);
+			await section.save();
 
 			const filteredInfo = course.toObject();
 			delete filteredInfo.createdAt;

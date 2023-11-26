@@ -8,12 +8,7 @@ const { uploadToS3 } = require("../configs/file");
 class AssignmentController {
 	async create(req, res) {
 		try {
-			const allowedProperties = [
-				"courseReference",
-				"title",
-				"totalMarks",
-				"passMarks",
-			];
+			const allowedProperties = ["courseReference", "title"];
 			const unexpectedProps = Object.keys(req.body).filter(
 				(key) => !allowedProperties.includes(key)
 			);
@@ -31,12 +26,12 @@ class AssignmentController {
 				return sendResponse(
 					res,
 					HTTP_STATUS.UNPROCESSABLE_ENTITY,
-					"Failed to create the assignment",
+					validation[0].msg,
 					validation
 				);
 			}
 
-			const { courseReference, title, totalMarks, passMarks } = req.body;
+			const { courseReference, title } = req.body;
 
 			const course = await courseModel.findById({
 				_id: courseReference,
@@ -61,8 +56,6 @@ class AssignmentController {
 				courseReference: courseReference,
 				title: title,
 				question: question,
-				totalMarks: totalMarks,
-				passMarks: passMarks,
 			});
 
 			const filteredInfo = assignment.toObject();
@@ -75,6 +68,75 @@ class AssignmentController {
 				HTTP_STATUS.OK,
 				"Successfully created the assignment",
 				filteredInfo
+			);
+		} catch (error) {
+			return sendResponse(
+				res,
+				HTTP_STATUS.INTERNAL_SERVER_ERROR,
+				"Internal server error",
+				"Server error"
+			);
+		}
+	}
+
+	async getAllByCourseReference(req, res) {
+		try {
+			const allowedProperties = ["courseReference"];
+			const unexpectedProps = Object.keys(req.params).filter(
+				(key) => !allowedProperties.includes(key)
+			);
+			if (unexpectedProps.length > 0) {
+				return sendResponse(
+					res,
+					HTTP_STATUS.UNPROCESSABLE_ENTITY,
+					"Failed to receive the assignments",
+					`Unexpected properties: ${unexpectedProps.join(", ")}`
+				);
+			}
+
+			const validation = validationResult(req).array();
+			if (validation.length > 0) {
+				return sendResponse(
+					res,
+					HTTP_STATUS.UNPROCESSABLE_ENTITY,
+					validation[0].msg,
+					validation
+				);
+			}
+
+			const { courseReference } = req.params;
+
+			const course = await courseModel.findById({
+				_id: courseReference,
+			});
+			if (!course) {
+				return sendResponse(
+					res,
+					HTTP_STATUS.UNAUTHORIZED,
+					"Course is not registered",
+					"Unauthorized"
+				);
+			}
+
+			const assignments = await assignmentModel
+				.find({})
+				.select("-createdAt -updatedAt -__v");
+			if (assignments.length === 0) {
+				return sendResponse(
+					res,
+					HTTP_STATUS.OK,
+					"No course has been found"
+				);
+			}
+
+			return sendResponse(
+				res,
+				HTTP_STATUS.OK,
+				"Successfully received all assignments",
+				{
+					result: assignments,
+					total: assignments.length,
+				}
 			);
 		} catch (error) {
 			return sendResponse(

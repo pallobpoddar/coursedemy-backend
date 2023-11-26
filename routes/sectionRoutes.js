@@ -24,4 +24,20 @@ sectionRoutes.get(
 	sectionController.getAllByCourseReference
 );
 
+sectionRoutes.patch(
+	"/update-one-by-id",
+	isAuthenticated,
+	isInstructorOrAdmin,
+	sectionValidator.updateOneById,
+	sectionController.updateOneById
+);
+
+sectionRoutes.delete(
+	"/delete-one-by-id/:id",
+	isAuthenticated,
+	isInstructorOrAdmin,
+	sectionValidator.deleteOneById,
+	sectionController.deleteOneById
+);
+
 module.exports = sectionRoutes;

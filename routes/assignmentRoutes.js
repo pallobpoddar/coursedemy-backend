@@ -14,10 +14,18 @@ assignmentRoutes.post(
 	"/create",
 	isAuthenticated,
 	isInstructorOrAdmin,
-	upload.single("fileInput"),
+	upload.single("assignment"),
 	fileValidator.uploadFile,
 	assignmentValidator.create,
 	assignmentController.create
+);
+
+assignmentRoutes.get(
+	"/get-all-by-course-reference/:courseReference",
+	isAuthenticated,
+	isInstructorOrAdmin,
+	assignmentValidator.getAllByCourseReference,
+	assignmentController.getAllByCourseReference
 );
 
 module.exports = assignmentRoutes;
