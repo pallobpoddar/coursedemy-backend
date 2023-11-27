@@ -147,11 +147,7 @@ class CourseController {
 				.find({})
 				.select("-createdAt -updatedAt -__v");
 			if (courses.length === 0) {
-				return sendResponse(
-					res,
-					HTTP_STATUS.OK,
-					"No course has been found"
-				);
+				return sendResponse(res, HTTP_STATUS.OK, "No course has been found");
 			}
 
 			return sendResponse(
@@ -204,12 +200,12 @@ class CourseController {
 				.findById({
 					_id: courseReference,
 				})
-				.select("-email -createdAt -updatedAt -__v");
+				.select("-createdAt -updatedAt -__v");
 			if (!course) {
 				return sendResponse(
 					res,
 					HTTP_STATUS.UNAUTHORIZED,
-					"Instructor is not registered",
+					"Course is not registered",
 					"Unauthorized"
 				);
 			}
@@ -230,10 +226,10 @@ class CourseController {
 		}
 	}
 
-	async updateOneById(req, res) {
+	async updateOneByCourseReference(req, res) {
 		try {
 			const allowedProperties = [
-				"instructorReference",
+				"courseReference",
 				"title",
 				"categoryReference",
 			];
@@ -254,30 +250,14 @@ class CourseController {
 				return sendResponse(
 					res,
 					HTTP_STATUS.UNPROCESSABLE_ENTITY,
-					"Failed to create the course",
+					validation[0].msg,
 					validation
 				);
 			}
 
-			const { id } = req.params;
-			const {
-				instructorReference,
-				title,
-				categoryReference,
-				subcategoryReference,
-			} = req.body;
+			const { courseReference, title, categoryReference } = req.body;
 
-			const thumbnailFile = req.files["thumbnail"][0];
-			const promoVideoFile = req.files["promoVideo"][0];
-
-			if (
-				!instructorReference &&
-				!title &&
-				!categoryReference &&
-				!subcategoryReference &&
-				!thumbnailFile &&
-				!promoVideoFile
-			) {
+			if (!title && !categoryReference) {
 				return sendResponse(
 					res,
 					HTTP_STATUS.BAD_REQUEST,
@@ -286,49 +266,150 @@ class CourseController {
 				);
 			}
 
-			const thumbnailParams = {
-				Bucket: `pallob-inception-bucket/final-project/images`,
-				Key: thumbnailFile.originalname,
-				Body: thumbnailFile.buffer,
-			};
-			const thumbnail = await uploadToS3(thumbnailParams);
-
-			const promoVideoParams = {
-				Bucket: `pallob-inception-bucket/final-project/videos`,
-				Key: promoVideoFile.originalname,
-				Body: promoVideoFile.buffer,
-			};
-			const promoVideo = await uploadToS3(promoVideoParams);
-
 			const course = await courseModel
+				.findById({
+					_id: courseReference,
+				})
+				.select("-createdAt -updatedAt -__v");
+			if (!course) {
+				return sendResponse(
+					res,
+					HTTP_STATUS.UNAUTHORIZED,
+					"Course is not registered",
+					"Unauthorized"
+				);
+			}
+
+			const updatedCourse = await courseModel
 				.findByIdAndUpdate(
-					{ _id: id },
+					{ _id: courseReference },
 					{
-						instructorReference: instructorReference,
 						title: title,
 						categoryReference: categoryReference,
-						subcategoryReference: subcategoryReference,
-						thumbnail: thumbnail,
-						promoVideo: promoVideo,
 					},
 					{ new: true }
 				)
 				.select("-createdAt -updatedAt -__v");
 
-			if (!course) {
-				return sendResponse(
-					res,
-					HTTP_STATUS.NOT_FOUND,
-					"Course is not registered",
-					"Not found"
-				);
-			}
-
 			return sendResponse(
 				res,
 				HTTP_STATUS.OK,
 				"Successfully updated the course",
-				course
+				updatedCourse
+			);
+		} catch (error) {
+			return sendResponse(
+				res,
+				HTTP_STATUS.INTERNAL_SERVER_ERROR,
+				"Internal server error",
+				"Server error"
+			);
+		}
+	}
+
+	async uploadThumbnail(req, res) {
+		try {
+			const validation = validationResult(req).array();
+			if (validation.length > 0) {
+				return sendResponse(
+					res,
+					HTTP_STATUS.UNPROCESSABLE_ENTITY,
+					validation[0].msg,
+					validation
+				);
+			}
+
+			const { courseReference } = req.params;
+
+			const course = await courseModel
+				.findById({
+					_id: courseReference,
+				})
+				.select("-createdAt -__v");
+			if (!course) {
+				return sendResponse(
+					res,
+					HTTP_STATUS.UNAUTHORIZED,
+					"Course is not registered",
+					"Unauthorized"
+				);
+			}
+
+			const params = {
+				Bucket: `pallob-inception-bucket/final-project/${req.awsFolder}`,
+				Key: req.file.originalname,
+				Body: req.file.buffer,
+			};
+			const thumbnail = await uploadToS3(params);
+
+			course.thumbnail = thumbnail;
+			await course.save();
+
+			const filteredInfo = course.toObject();
+			delete filteredInfo.updatedAt;
+
+			return sendResponse(
+				res,
+				HTTP_STATUS.OK,
+				"Successfully uploaded the thumbnail",
+				filteredInfo
+			);
+		} catch (error) {
+			return sendResponse(
+				res,
+				HTTP_STATUS.INTERNAL_SERVER_ERROR,
+				"Internal server error",
+				"Server error"
+			);
+		}
+	}
+
+	async uploadPromoVideo(req, res) {
+		try {
+			const validation = validationResult(req).array();
+			if (validation.length > 0) {
+				return sendResponse(
+					res,
+					HTTP_STATUS.UNPROCESSABLE_ENTITY,
+					validation[0].msg,
+					validation
+				);
+			}
+
+			const { courseReference } = req.params;
+
+			const course = await courseModel
+				.findById({
+					_id: courseReference,
+				})
+				.select("-createdAt -__v");
+			if (!course) {
+				return sendResponse(
+					res,
+					HTTP_STATUS.UNAUTHORIZED,
+					"Course is not registered",
+					"Unauthorized"
+				);
+			}
+
+			const params = {
+				Bucket: `pallob-inception-bucket/final-project/${req.awsFolder}`,
+				Key: req.file.originalname,
+				Body: req.file.buffer,
+			};
+			const promoVideo = await uploadToS3(params);
+
+			course.promoVideo = promoVideo;
+			await course.save();
+
+			const filteredInfo = course.toObject();
+			delete filteredInfo.updatedAt;
+
+			return sendResponse(
+				res,
+				HTTP_STATUS.OK,
+				"Successfully uploaded the promo video",
+				filteredInfo
 			);
 		} catch (error) {
 			return sendResponse(
