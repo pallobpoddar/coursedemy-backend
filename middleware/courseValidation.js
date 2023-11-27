@@ -38,7 +38,7 @@ const courseValidator = {
 			.withMessage("Invalid MongoDB Id"),
 	],
 
-	getOneByCourseReference: [
+	crudByCourseReference: [
 		param("courseReference")
 			.exists()
 			.withMessage("Course reference is required")
@@ -47,9 +47,10 @@ const courseValidator = {
 			.withMessage("Invalid MongoDB Id"),
 	],
 
-	update: [
-		body("instructorReference")
-			.optional()
+	updateOneByCourseReference: [
+		body("courseReference")
+			.exists()
+			.withMessage("Course reference is required")
 			.bail()
 			.isMongoId()
 			.withMessage("Invalid MongoDB Id"),
@@ -66,11 +67,6 @@ const courseValidator = {
 			.isLength({ max: 100 })
 			.withMessage("Character limit exceeded"),
 		body("categoryReference")
-			.optional()
-			.bail()
-			.isMongoId()
-			.withMessage("Invalid MongoDB Id"),
-		body("subcategoryReference")
 			.optional()
 			.bail()
 			.isMongoId()

@@ -28,17 +28,36 @@ courseRoutes.get(
 courseRoutes.get(
 	"/get-one-by-course-reference/:courseReference",
 	isInstructorOrAdmin,
-	courseValidator.getOneByCourseReference,
+	courseValidator.crudByCourseReference,
 	courseController.getOneByCourseReference
 );
 
 courseRoutes.patch(
-	"/update-one-by-id/:id",
+	"/update-one-by-id",
 	isAuthenticated,
 	isInstructorOrAdmin,
-	upload.fields([{ name: "thumbnail" }, { name: "promoVideo" }]),
-	courseValidator.update,
-	courseController.updateOneById
+	courseValidator.updateOneByCourseReference,
+	courseController.updateOneByCourseReference
+);
+
+courseRoutes.patch(
+	"/upload-thumbnail/:courseReference",
+	isAuthenticated,
+	isInstructorOrAdmin,
+	upload.single("thumbnail"),
+	fileValidator.uploadFile,
+	courseValidator.crudByCourseReference,
+	courseController.uploadThumbnail
+);
+
+courseRoutes.patch(
+	"/upload-promo-video/:courseReference",
+	isAuthenticated,
+	isInstructorOrAdmin,
+	upload.single("promoVideo"),
+	fileValidator.uploadFile,
+	courseValidator.crudByCourseReference,
+	courseController.uploadPromoVideo
 );
 
 module.exports = courseRoutes;
