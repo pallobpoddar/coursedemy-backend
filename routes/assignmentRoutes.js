@@ -28,4 +28,22 @@ assignmentRoutes.get(
 	assignmentController.getAllByCourseReference
 );
 
+assignmentRoutes.patch(
+	"/update-one-by-id",
+	isAuthenticated,
+	isInstructorOrAdmin,
+	upload.single("assignment"),
+	fileValidator.uploadFile,
+	assignmentValidator.updateOneById,
+	assignmentController.updateOneById
+);
+
+assignmentRoutes.delete(
+	"/delete-one-by-id/:id",
+	isAuthenticated,
+	isInstructorOrAdmin,
+	assignmentValidator.deleteOneById,
+	assignmentController.deleteOneById
+);
+
 module.exports = assignmentRoutes;
