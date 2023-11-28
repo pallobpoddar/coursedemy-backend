@@ -38,7 +38,7 @@ const courseValidator = {
 			.withMessage("Invalid MongoDB Id"),
 	],
 
-	crudByCourseReference: [
+	getOneByCourseReference: [
 		param("courseReference")
 			.exists()
 			.withMessage("Course reference is required")
@@ -68,6 +68,24 @@ const courseValidator = {
 			.withMessage("Character limit exceeded"),
 		body("categoryReference")
 			.optional()
+			.bail()
+			.isMongoId()
+			.withMessage("Invalid MongoDB Id"),
+	],
+
+	uploadFile: [
+		body("courseReference")
+			.exists()
+			.withMessage("Course reference is required")
+			.bail()
+			.isMongoId()
+			.withMessage("Invalid MongoDB Id"),
+	],
+
+	publishCourse: [
+		body("courseReference")
+			.exists()
+			.withMessage("Course reference is required")
 			.bail()
 			.isMongoId()
 			.withMessage("Invalid MongoDB Id"),

@@ -1,0 +1,49 @@
+<head>
+	<style>
+		body {
+			margin: 5% 10%;
+			background-color: #ddd6fe;
+			color: black;
+			display: flex;
+			flex-direction: column;
+			gap: 0.25rem;
+		}
+
+		.verify {
+			background-color: #5b21b6;
+			width: 150px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			height: 40px;
+			color: #e7e7e7;
+			text-decoration: none;
+			border-radius: 5px;
+			transition: 0.25s color;
+		}
+
+		.verify:hover {
+			color: #f0abfc;
+		}
+
+		.ignore {
+			size: 30px;
+		}
+	</style>
+</head>
+
+<body>
+	<span>Dear <%= name %></span>
+	<span
+		>Please take a second to accept
+		<a href="<%= courseURL %>"><%= courseURL %></a> to publish in your
+		website .</span
+	>
+	<span>Once you do, learners will be able to view this course. </span>
+	<br />
+
+	<a href="<%= actionsURL %>" class="verify">Take actions</a>
+	<br />
+	If the button does not work, please paste the URL below into your browser:
+	<a href="<%= actionsURL %>"><%= actionsURL %></a>
+</body>

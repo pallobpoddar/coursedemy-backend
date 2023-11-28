@@ -147,6 +147,118 @@ class AssignmentController {
 			);
 		}
 	}
+
+	async updateOneById(req, res) {
+		try {
+			const allowedProperties = ["id", "title"];
+			const unexpectedProps = Object.keys(req.body).filter(
+				(key) => !allowedProperties.includes(key)
+			);
+			if (unexpectedProps.length > 0) {
+				return sendResponse(
+					res,
+					HTTP_STATUS.UNPROCESSABLE_ENTITY,
+					"Failed to create the assignment",
+					`Unexpected properties: ${unexpectedProps.join(", ")}`
+				);
+			}
+
+			const validation = validationResult(req).array();
+			if (validation.length > 0) {
+				return sendResponse(
+					res,
+					HTTP_STATUS.UNPROCESSABLE_ENTITY,
+					validation[0].msg,
+					validation
+				);
+			}
+
+			const { id, title } = req.body;
+
+			const assignment = await assignmentModel
+				.findById({
+					_id: id,
+				})
+				.select("-createdAt -__v");
+			if (!assignment) {
+				return sendResponse(
+					res,
+					HTTP_STATUS.UNAUTHORIZED,
+					"Assignment is not registered",
+					"Unauthorized"
+				);
+			}
+
+			const params = {
+				Bucket: `pallob-inception-bucket/final-project/${req.awsFolder}`,
+				Key: req.file.originalname,
+				Body: req.file.buffer,
+			};
+			const question = await uploadToS3(params);
+
+			assignment.title = title;
+			assignment.question = question;
+			await assignment.save();
+
+			const filteredInfo = assignment.toObject();
+			delete filteredInfo.updatedAt;
+
+			return sendResponse(
+				res,
+				HTTP_STATUS.OK,
+				"Successfully updated the assignment",
+				filteredInfo
+			);
+		} catch (error) {
+			return sendResponse(
+				res,
+				HTTP_STATUS.INTERNAL_SERVER_ERROR,
+				"Internal server error",
+				"Server error"
+			);
+		}
+	}
+
+	async deleteOneById(req, res) {
+		try {
+			const validation = validationResult(req).array();
+			if (validation.length > 0) {
+				return sendResponse(
+					res,
+					HTTP_STATUS.UNPROCESSABLE_ENTITY,
+					validation[0].msg,
+					validation
+				);
+			}
+
+			const { id } = req.params;
+
+			const assignment = await assignmentModel.findByIdAndDelete({
+				_id: id,
+			});
+			if (!assignment) {
+				return sendResponse(
+					res,
+					HTTP_STATUS.UNAUTHORIZED,
+					"Assignment is not registered",
+					"Unauthorized"
+				);
+			}
+
+			return sendResponse(
+				res,
+				HTTP_STATUS.OK,
+				"Successfully deleted the assignment"
+			);
+		} catch (error) {
+			return sendResponse(
+				res,
+				HTTP_STATUS.INTERNAL_SERVER_ERROR,
+				"Internal server error",
+				"Server error"
+			);
+		}
+	}
 }
 
 module.exports = new AssignmentController();

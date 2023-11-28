@@ -1,4 +1,10 @@
 const { validationResult } = require("express-validator");
+const path = require("path");
+const ejs = require("ejs");
+const { promisify } = require("util");
+const ejsRenderFile = promisify(ejs.renderFile);
+const transporter = require("../configs/mail");
+const authModel = require("../models/auth");
 const courseModel = require("../models/course");
 const categoryModel = require("../models/category");
 const instructorModel = require("../models/instructor");
@@ -104,6 +110,38 @@ class CourseController {
 		}
 	}
 
+	async getAll(req, res) {
+		try {
+			const courses = await courseModel
+				.find({})
+				.populate("instructorReference")
+				.populate("categoryReference")
+				.select("-isApproved -createdAt -updatedAt -__v");
+			if (!courses) {
+				return sendResponse(
+					res,
+					HTTP_STATUS.NOT_FOUND,
+					"No courses found",
+					"Not found"
+				);
+			}
+
+			return sendResponse(
+				res,
+				HTTP_STATUS.OK,
+				"Successfully received the courses",
+				courses
+			);
+		} catch (error) {
+			return sendResponse(
+				res,
+				HTTP_STATUS.INTERNAL_SERVER_ERROR,
+				"Internal server error",
+				"Server error"
+			);
+		}
+	}
+
 	async getAllByInstructorReference(req, res) {
 		try {
 			const allowedProperties = ["instructorReference"];
@@ -147,7 +185,11 @@ class CourseController {
 				.find({})
 				.select("-createdAt -updatedAt -__v");
 			if (courses.length === 0) {
-				return sendResponse(res, HTTP_STATUS.OK, "No course has been found");
+				return sendResponse(
+					res,
+					HTTP_STATUS.OK,
+					"No course has been found"
+				);
 			}
 
 			return sendResponse(
@@ -309,6 +351,18 @@ class CourseController {
 
 	async uploadThumbnail(req, res) {
 		try {
+			const allowedProperties = ["courseReference"];
+			const unexpectedProps = Object.keys(req.body).filter(
+				(key) => !allowedProperties.includes(key)
+			);
+			if (unexpectedProps.length > 0) {
+				return sendResponse(
+					res,
+					HTTP_STATUS.UNPROCESSABLE_ENTITY,
+					"Failed to upload the thumbnail",
+					`Unexpected properties: ${unexpectedProps.join(", ")}`
+				);
+			}
 			const validation = validationResult(req).array();
 			if (validation.length > 0) {
 				return sendResponse(
@@ -319,7 +373,7 @@ class CourseController {
 				);
 			}
 
-			const { courseReference } = req.params;
+			const { courseReference } = req.body;
 
 			const course = await courseModel
 				.findById({
@@ -366,6 +420,19 @@ class CourseController {
 
 	async uploadPromoVideo(req, res) {
 		try {
+			const allowedProperties = ["courseReference"];
+			const unexpectedProps = Object.keys(req.body).filter(
+				(key) => !allowedProperties.includes(key)
+			);
+			if (unexpectedProps.length > 0) {
+				return sendResponse(
+					res,
+					HTTP_STATUS.UNPROCESSABLE_ENTITY,
+					"Failed to upload the promo video",
+					`Unexpected properties: ${unexpectedProps.join(", ")}`
+				);
+			}
+
 			const validation = validationResult(req).array();
 			if (validation.length > 0) {
 				return sendResponse(
@@ -376,7 +443,7 @@ class CourseController {
 				);
 			}
 
-			const { courseReference } = req.params;
+			const { courseReference } = req.body;
 
 			const course = await courseModel
 				.findById({
@@ -412,6 +479,160 @@ class CourseController {
 				filteredInfo
 			);
 		} catch (error) {
+			return sendResponse(
+				res,
+				HTTP_STATUS.INTERNAL_SERVER_ERROR,
+				"Internal server error",
+				"Server error"
+			);
+		}
+	}
+
+	async sendPublishRequest(req, res) {
+		try {
+			const allowedProperties = ["courseReference"];
+			const unexpectedProps = Object.keys(req.body).filter(
+				(key) => !allowedProperties.includes(key)
+			);
+			if (unexpectedProps.length > 0) {
+				return sendResponse(
+					res,
+					HTTP_STATUS.UNPROCESSABLE_ENTITY,
+					"Failed to send publishrequest",
+					`Unexpected properties: ${unexpectedProps.join(", ")}`
+				);
+			}
+
+			const validation = validationResult(req).array();
+			if (validation.length > 0) {
+				return sendResponse(
+					res,
+					HTTP_STATUS.UNPROCESSABLE_ENTITY,
+					validation[0].msg,
+					validation
+				);
+			}
+
+			const { courseReference } = req.body;
+
+			const course = await courseModel
+				.findById({ _id: courseReference })
+				.populate("instructorReference", "email")
+				.select("-createdAt -updatedAt -__v");
+
+			if (!course) {
+				return sendResponse(
+					res,
+					HTTP_STATUS.UNAUTHORIZED,
+					"Course is not registered",
+					"Unauthorized"
+				);
+			}
+
+			const courseURL = path.join(
+				process.env.FRONTEND_URL,
+				`instructor/course/${courseReference}/curriculum`
+			);
+
+			const actionsURL = path.join(
+				process.env.FRONTEND_URL,
+				`admin/course-publication-request/${courseReference}`
+			);
+
+			const admin = await authModel
+				.findOne({ role: "admin" })
+				.populate("adminReference", "name");
+			const name = admin.adminReference.name;
+
+			const htmlBody = await ejsRenderFile(
+				path.join(__dirname, "..", "views", "coursePublishRequest.ejs"),
+				{
+					name: name,
+					courseURL: courseURL,
+					actionsURL: actionsURL,
+				}
+			);
+
+			const updatedCourse = await transporter.sendMail({
+				from: course.instructorReference.email,
+				to: admin.email,
+				subject: "Coursedemy - Publication Request",
+				html: htmlBody,
+			});
+
+			if (updatedCourse.messageId) {
+				return sendResponse(
+					res,
+					HTTP_STATUS.OK,
+					"A publication email has been sent to the admin"
+				);
+			}
+
+			return sendResponse(
+				res,
+				HTTP_STATUS.UNPROCESSABLE_ENTITY,
+				"Something went wrong. Please try again later"
+			);
+		} catch (error) {
+			return sendResponse(
+				res,
+				HTTP_STATUS.INTERNAL_SERVER_ERROR,
+				"Internal server error",
+				"Server error"
+			);
+		}
+	}
+
+	async publishCourse(req, res) {
+		try {
+			const allowedProperties = ["courseReference"];
+			const unexpectedProps = Object.keys(req.body).filter(
+				(key) => !allowedProperties.includes(key)
+			);
+			if (unexpectedProps.length > 0) {
+				return sendResponse(
+					res,
+					HTTP_STATUS.UNPROCESSABLE_ENTITY,
+					"Failed to send publishrequest",
+					`Unexpected properties: ${unexpectedProps.join(", ")}`
+				);
+			}
+
+			const validation = validationResult(req).array();
+			if (validation.length > 0) {
+				return sendResponse(
+					res,
+					HTTP_STATUS.UNPROCESSABLE_ENTITY,
+					validation[0].msg,
+					validation
+				);
+			}
+
+			const { courseReference } = req.body;
+
+			const course = await courseModel
+				.findById({ _id: courseReference })
+				.select("-createdAt -__v");
+
+			if (!course) {
+				return sendResponse(
+					res,
+					HTTP_STATUS.UNAUTHORIZED,
+					"Course is not registered",
+					"Unauthorized"
+				);
+			}
+
+			course.isApproved = true;
+			await course.save();
+
+			return sendResponse(
+				res,
+				HTTP_STATUS.OK,
+				"The course has been published successfully"
+			);
+		} catch (error) {
+			console.log(error);
 			return sendResponse(
 				res,
 				HTTP_STATUS.INTERNAL_SERVER_ERROR,

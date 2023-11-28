@@ -18,6 +18,8 @@ courseRoutes.post(
 	courseController.create
 );
 
+courseRoutes.get("/get-all", courseController.getAll);
+
 courseRoutes.get(
 	"/get-all-by-instructor-reference/:instructorReference",
 	isInstructorOrAdmin,
@@ -28,7 +30,7 @@ courseRoutes.get(
 courseRoutes.get(
 	"/get-one-by-course-reference/:courseReference",
 	isInstructorOrAdmin,
-	courseValidator.crudByCourseReference,
+	courseValidator.getOneByCourseReference,
 	courseController.getOneByCourseReference
 );
 
@@ -41,23 +43,39 @@ courseRoutes.patch(
 );
 
 courseRoutes.patch(
-	"/upload-thumbnail/:courseReference",
+	"/upload-thumbnail",
 	isAuthenticated,
 	isInstructorOrAdmin,
 	upload.single("thumbnail"),
 	fileValidator.uploadFile,
-	courseValidator.crudByCourseReference,
+	courseValidator.uploadFile,
 	courseController.uploadThumbnail
 );
 
 courseRoutes.patch(
-	"/upload-promo-video/:courseReference",
+	"/upload-promo-video",
 	isAuthenticated,
 	isInstructorOrAdmin,
 	upload.single("promoVideo"),
 	fileValidator.uploadFile,
-	courseValidator.crudByCourseReference,
+	courseValidator.uploadFile,
 	courseController.uploadPromoVideo
+);
+
+courseRoutes.post(
+	"/course-publication-request",
+	isAuthenticated,
+	isInstructorOrAdmin,
+	courseValidator.publishCourse,
+	courseController.sendPublishRequest
+);
+
+courseRoutes.post(
+	"/publish-course",
+	isAuthenticated,
+	isInstructorOrAdmin,
+	courseValidator.publishCourse,
+	courseController.publishCourse
 );
 
 module.exports = courseRoutes;
