@@ -113,7 +113,7 @@ class CourseController {
 	async getAll(req, res) {
 		try {
 			const courses = await courseModel
-				.find({})
+				.find({ isApproved: true })
 				.populate("instructorReference")
 				.populate("categoryReference")
 				.select("-isApproved -createdAt -updatedAt -__v");
@@ -185,11 +185,7 @@ class CourseController {
 				.find({})
 				.select("-createdAt -updatedAt -__v");
 			if (courses.length === 0) {
-				return sendResponse(
-					res,
-					HTTP_STATUS.OK,
-					"No course has been found"
-				);
+				return sendResponse(res, HTTP_STATUS.OK, "No course has been found");
 			}
 
 			return sendResponse(
